@@ -6,6 +6,13 @@ import numpy as np
 
 from . import DIR_METHOD
 
+CELLS = {# ID, file_name
+    '0':'220128_006_ch2_csv',
+    '1':'220210_003_ch3_csv',
+}
+
+DIR_DATA = f'{DIR_METHOD}/../data'
+
 
 def load_named(dname, pname=None, cell=None, model=None, parameters=None):
     """
@@ -22,13 +29,9 @@ def load_named(dname, pname=None, cell=None, model=None, parameters=None):
         raise NotImplementedError
         tr, vr, cr = fake_data(model, parameters, sigma=0.1, seed=1)  # TODO
     elif dname == 'real':
-        cells = {# ID, file_name
-            '0':'220128_006_ch2_csv',
-            '1':'220210_003_ch3_csv',
-        }
         if 'NaIV' in pname:
             tr, vr, cr = load_inaiv(
-                f'{DIR_METHOD}/../data/{cells[cell]}/{pname}')
+                f'{DIR_DATA}/{CELLS[cell]}/{pname}')
         else:
             raise ValueError('Unknow `pname`, expecting `NaIV`.')
     else:
@@ -82,3 +85,13 @@ def fake_data(model, parameters, sigma, seed=None):
 
     return t, v, c
 
+
+def load_info(cell):
+    """
+    Return (cm, rs) of the data `cell`.
+    """
+    import pandas as pd
+    info_file = 'info.csv'
+    info = pd.read_csv(f'{DIR_DATA}/{info_file}', index_col=0, header=[0])
+    cell = CELLS[cell]
+    return info.loc[cell]['cm'], info.loc[cell]['rs']
