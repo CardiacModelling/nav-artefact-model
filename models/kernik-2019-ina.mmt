@@ -1,0 +1,232 @@
+[[model]]
+name: kernik-2019-ina
+display_name: Kernik et al. 2019 INa
+version: 20220216
+mmt_authors: Chon Lok Lei
+desc: """
+    Myokit implementation of the fast sodium current of the induced pluripotent
+    stem-cell derived cardiomyocyte model by Kernik et al. from [1].
+
+    This implementation is based on the original Matlab code provided by the
+    authors (`ipsc_function.m`, `ICs_baseline.mat` and
+    `baseline_parameter_inputs.mat` as published for figure 10) [2]. It was
+    verified against the original code by comparing the calculated
+    derivatives.
+
+    References:
+
+    [1] Kernik, Morotti et al., Clancy (2019) A computational model of induced
+        pluripotent stem‐cell derived cardiomyocytes incorporating experimental
+        variability from multiple data sources. The Journal of Physiology.
+    [2] https://github.com/ClancyLabUCD/IPSC-model
+        Commit 6e8b907f975443ef954863552e784b90799ba5a7
+        Retrieved on 2021-07-19
+
+"""
+# Initial conditions
+membrane.V = -7.559660163885468e+01
+ina.m      =  2.975499629264136e-02
+ina.h      =  7.395436078124292e-01
+ina.j      =  1.245159825745049e-01
+
+
+[engine]
+time = 0 [ms]
+    in [ms]
+    bind time
+pace = 0
+    bind pace
+
+
+[membrane]
+i_ion = (
+    + ina.i_Na
+    )
+    in [A/F]
+    label cellular_current
+dot(V) = -(i_ion + stimulus.i_stim)
+    label membrane_potential
+    in [mV]
+
+
+[stimulus]
+i_stim = engine.pace * amplitude
+    in [A/F]
+amplitude = -3 [A/F]
+    in [A/F]
+
+
+#
+# Sodium Current (INa)
+#
+[ina]
+use membrane.V
+g_Na = 9.720613409241 [nS/pF]
+    in [nS/pF]
+    label g_Na
+m1 = 108.045846384818 [1/ms]
+    in [1/ms]
+    label k_Na_1
+m2 = 13.107015733941 [mV]
+    in [mV]
+    label k_Na_2
+m5 = 0.002326914367
+    label k_Na_3
+m6 = -7.917726289513 [mV]
+    in [mV]
+    label k_Na_4
+h1 = 0.003626598864 [1/ms]
+    in [1/ms]
+    label k_Na_5
+h2 = -19.839358860026 [mV]
+    in [mV]
+    label k_Na_6
+h5 = 9663.29497711474
+    label k_Na_7
+h6 = 7.395503564613 [mV]
+    in [mV]
+    label k_Na_8
+j1 = 0.000512257182 [1/ms]
+    in [1/ms]
+    label k_Na_9
+j2 = -66.583755502652 [mV]
+    in [mV]
+    label k_Na_10
+tau_m_const = 0.031977580384 [ms]
+    in [ms]
+    label k_Na_11
+tau_h_const = 0.167331502516 [ms]
+    in [ms]
+    label k_Na_12
+tau_j_const = 0.951088724962 [ms]
+    in [ms]
+    label k_Na_13
+n_param = 13
+    label k_Na_n
+m3 = m5 * m1
+    in [1/ms]
+m4 = 1 / (1 / m2 + 1 / m6)
+    in [mV]
+h3 = h5 * h1
+    in [1/ms]
+h4 = 1 / (1 / h2 + 1 / h6)
+    in [mV]
+j5 = h5
+j6 = h6
+    in [mV]
+j3 = j5 * j1
+    in [1/ms]
+j4 = 1 / (1 / j2 + 1 / j6)
+    in [mV]
+dot(m) = (inf - m) / tau
+    desc: activation in i_Na
+    a = m1 * exp(V / m2)
+        in [1/ms]
+    b = m3 * exp(V / m4)
+        in [1/ms]
+    inf = a / (a + b)
+    tau = 1 / (a + b) + tau_m_const
+        in [ms]
+dot(h) = (inf - h) / tau
+    desc: inactivation in i_Na
+    a = h1 * exp(V / h2)
+        in [1/ms]
+    b = h3 * exp(V / h4)
+        in [1/ms]
+    inf = a / (a + b)
+    tau = 1 / (a + b) + tau_h_const
+        in [ms]
+dot(j) = (inf - j) / tau
+    desc: slow inactivation in i_Na
+    a = j1 * exp(V / j2)
+        in [1/ms]
+    b = j3 * exp(V / j4)
+        in [1/ms]
+    inf = a / (a + b)
+    tau = 1 / (a + b) + tau_j_const
+        in [ms]
+i_Na = g_Na * m^3 * h * j * (V - erev.E_Na)
+    in [A/F]
+    label I_Na
+
+
+#
+# Cell size
+#
+[cell]
+Cm = 60 [pF]
+    in [pF]
+    label membrane_capacitance
+
+
+#
+# Physical constants
+#
+[phys]
+T = 310 [K]
+    in [K]
+R = 8.314472 [J / mol / K]
+    in [J / mol / K]
+F = 96.4853415 [C / mmol]
+    in [C / mmol]
+RTF = R * T / F
+    in [mV]
+FRT = F / (R * T)
+    in [1/mV]
+FFRT = F * FRT
+    in [C/mmol/mV]
+
+
+#
+# Cai (millimolar)
+#
+[cai]
+Cai = 1e-5 [mM]
+    in [mM]
+    label Ca_i
+
+
+#
+# Nai (millimolar) (in sodium_dynamics)
+#
+[nai]
+Nai = 10 [mM]
+    in [mM]
+    label Na_i
+
+
+#
+# Ki (millimolar) (in potatssium_dynamics)
+#
+[ki]
+Ki = 110 [mM]
+    in [mM]
+    label K_i
+
+
+#
+# External concentrations
+#
+[extra]
+Ko = 5.4 [mM]
+    in [mM]
+    label K_o
+Cao = 1.8 [mM]
+    in [mM]
+    label Ca_o
+Nao = 140 [mM]
+    in [mM]
+    label Na_o
+
+
+#
+# Reversal potentials
+#
+[erev]
+use phys.RTF
+E_Ca = 0.5 * RTF * log(extra.Cao / cai.Cai)
+    in [mV]
+E_Na = RTF * log(extra.Nao / nai.Nai)
+    in [mV]
+E_K = RTF * log(extra.Ko / ki.Ki)
+    in [mV]
