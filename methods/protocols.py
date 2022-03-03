@@ -43,4 +43,29 @@ def generate_filter(p, dt=1, duration=5):
 
 
 def fold(times, data, fold, discard=0, discard_start=False):
-    raise NotImplementedError
+    """
+    Fold the data into a dict of {0:[data_fold_0], 1:[data_fold_1], ...},
+    return folded_time, folded_data.
+
+    times: time series of the data.
+    data: the data to be folded.
+    fold: duration for each fold (same unit as times).
+    discard: duration for which to be discarded after each fold.
+    discard_start: if True, discard the beginning of the data by duration of
+                   discard.
+    """
+    dt = times[1] - times[0]
+    ti = times[0]
+    if discard_start:
+        ti += discard
+    tj = ti + fold
+    tf = times[-1]
+    out = dict()
+    i = 0
+    while tj <= tf + dt:
+        out[i] = data[((times >= ti) & (times < tj))]
+        ti = tj + discard
+        tj = ti + fold
+        i += 1
+    t = np.arange(0, fold, dt)
+    return t, out

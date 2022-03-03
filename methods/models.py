@@ -459,7 +459,7 @@ class VCModel(pints.ForwardModel):
             self._simulation2.set_fixed_form_protocol(*p)
 
         # Generate logging times
-        self._times = np.arange(0, duration, self._dt)
+        self._times = np.arange(0, duration + self._dt, self._dt)
         if mask is not None:
             self._times = self._times[mask]
 
