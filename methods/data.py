@@ -6,47 +6,58 @@ import numpy as np
 
 from . import DIR_METHOD
 
-CELLS = {# ID, file_name
-    '0':'220128_006_ch2_csv',
-    '1':'220210_003_ch3_csv',
+_cnames = {# ID, file_name
+    'cell0':'220128_006_ch2_csv',
+    'cell1':'220210_003_ch3_csv',
 }
+
+_naiv_steps = [-80, -70, -60, -50, -40, -30, -20, -10, 0, 10, 20, 30, 40]  # mV
 
 DIR_DATA = f'{DIR_METHOD}/../data'
 
 
-def load_named(dname, pname=None, cell=None, model=None, parameters=None):
+def data_sets(include_synth=True):
+    """ Returns a list of available data sets. """
+    names = list(_cnames.keys())
+    if include_synth:
+        names = ['syn'] + names
+    return names
+
+
+def load_named(dname, pname=None, model=None, parameters=None):
     """
     Generates or loads a named data set.
 
     A valid name is either:
-
-    - a data set name ``dname`` and a protocol name ``pname`` with ``cell``,
+    
+    - a data set name ``dname`` and a protocol name ``pname``,
     - a data set name ``dname`` and a ``model`` with a set of ``parameters``,
-
-    where ``dname`` is one of ``['synth1', 'real1']``.
+    
+    where ``dname`` is one of ``['syn', 'cell1', 'cell2', ...]`` (for a full
+    list see :meth:`data_sets()`.
     """
     if dname == 'syn':
         raise NotImplementedError
-        tr, vr, cr = fake_data(model, parameters, sigma=0.1, seed=1)  # TODO
-    elif dname == 'real':
-        if 'NaIV' in pname:
-            tr, vr, cr = load_inaiv(
-                f'{DIR_DATA}/{CELLS[cell]}/{pname}')
-        else:
-            raise ValueError('Unknow `pname`, expecting `NaIV`.')
+        return fake_data(model, parameters, sigma=0.1, seed=1)  # TODO
+
+    try:
+        cname = _cnames[dname]
+    except KeyError:
+        raise ValueError(f'Unknown data set {dname}')
+    if 'NaIV' in pname:
+        return load_naiv(f'{DIR_DATA}/{cname}/{pname}')
     else:
-        raise ValueError('Unknonw `dname`, expecting `syn` or `real`.')
-    return tr, vr, cr
+        raise ValueError(f'Unknown protocol {pname}')
 
 
-def load_inaiv(path):
+def load_naiv(path):
     """
     Loads an "Alex" file: CSV with current (A/F).
 
     Returns a tuple ``(t, v, c)`` where ``t`` is time in ms, ``v`` is voltage
     in mV, and ``c`` is current in A/F.
     """
-    v_steps = [-80, -70, -60, -50, -40, -30, -20, -10, 0, 10, 20, 30, 40]  # mV
+    v_steps = list(_naiv_steps)
     v_hold = -100.  # mV
     t_hold = 10.    # ms
     t_step = 20.    # ms
@@ -86,12 +97,12 @@ def fake_data(model, parameters, sigma, seed=None):
     return t, v, c
 
 
-def load_info(cell):
+def load_info(cname):
     """
     Return (cm, rs) of the data `cell`.
     """
     import pandas as pd
     info_file = 'info.csv'
     info = pd.read_csv(f'{DIR_DATA}/{info_file}', index_col=0, header=[0])
-    cell = CELLS[cell]
+    cell = _cnames[cname]
     return info.loc[cell]['cm'], info.loc[cell]['rs']

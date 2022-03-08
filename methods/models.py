@@ -56,7 +56,7 @@ _artefact_model_full = None
 
 def mmt(model):
     """
-    Takes a short name (e.g. "paci") and returns the path to its .mmt file.
+    Takes a short name (e.g. "kernik") and returns the path to its .mmt file.
     """
     return os.path.join(_model_dir, _model_files[model])
 
@@ -459,7 +459,7 @@ class VCModel(pints.ForwardModel):
             self._simulation2.set_fixed_form_protocol(*p)
 
         # Generate logging times
-        self._times = np.arange(0, duration + self._dt, self._dt)
+        self._times = np.arange(0, duration, self._dt)
         if mask is not None:
             self._times = self._times[mask]
 

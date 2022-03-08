@@ -4,7 +4,7 @@ sys.path.append('..')
 import matplotlib.pyplot as plt
 import methods.data
 
-t, v, c = methods.data.load_named('real', cell='0', pname='NaIVCP80')
+t, v, c = methods.data.load_named('cell0', pname='NaIVCP80')
 
 _, axes = plt.subplots(2, 1, sharex=True)
 for vi in v.keys():
