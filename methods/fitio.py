@@ -423,13 +423,13 @@ def cmd(title):
     import argparse
     parser = argparse.ArgumentParser(title)
     parser.add_argument(
-        'model',
+        '-m', '--model',
         nargs='?',
         choices=['kernik'],
         default='kernik',
         help='The model to use')
     parser.add_argument(
-        'protocol',
+        '-p', '--protocol',
         nargs='?',
         choices=[f'NaIVCP{i}' for i in np.arange(0, 90, 10)] \
                 + [f'NaIVC{i}' for i in np.arange(0, 90, 10)] \
@@ -437,7 +437,7 @@ def cmd(title):
         default='NaIVCP80',
         help='The protocol to use')
     parser.add_argument(
-        'data',
+        '-d', '--data',
         nargs='?',
         choices=data.data_sets(),
         default='cell0',
@@ -445,7 +445,7 @@ def cmd(title):
     args = parser.parse_args()
 
     # Experiment name
-    name = f'results-test-{args.model}-{args.protocol}-{args.data}'
+    name = f'results-test-{args.model}-{args.data}-{args.protocol}'
 
     return args.model, args.protocol, args.data, name
 
