@@ -7,7 +7,8 @@ from methods import protocols
 
 x = models.VCModel(models.mmt('kernik'), True, True, models.VC_FULL)
 y = models.VCModel(models.mmt('kernik'), True, True, models.VC_IDEAL)
-p = protocols.load('../protocols/ina-steps.txt')
+p = protocols.load('../protocols/ina-steps-no-holding.txt')
+#p = protocols.load('../protocols/ina-steps.txt')
 x.set_protocol(p, dt=0.04)
 y.set_protocol(p, dt=0.04)
 
@@ -26,8 +27,8 @@ plt.plot(y.times(), y.simulate([1] * y.n_parameters()), label='ideal')
 plt.legend()
 plt.show()
 
-tx, cx = protocols.fold(x.times(), x.simulate([1] * x.n_parameters()), 40)
-ty, cy = protocols.fold(y.times(), y.simulate([1] * y.n_parameters()), 40)
+tx, cx = protocols.fold(x.times(), x.simulate([1] * x.n_parameters()), 40)#, discard=2000)
+ty, cy = protocols.fold(y.times(), y.simulate([1] * y.n_parameters()), 40)#, discard=2000)
 assert(len(cx) == 13)
 assert(len(cy) == 13)
 
