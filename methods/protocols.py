@@ -69,3 +69,28 @@ def fold(times, data, fold, discard=0, discard_start=False):
         i += 1
     t = np.arange(0, fold, dt)
     return t, out
+
+
+def mask(times, fold, discard=0, discard_start=False):
+    """
+    Fold the data into a dict of {0:[data_fold_0], 1:[data_fold_1], ...},
+    return folded_time, folded_data.
+
+    times: time series of the data.
+    fold: duration for each fold (same unit as times).
+    discard: duration for which to be discarded after each fold.
+    discard_start: if True, discard the beginning of the data by duration of
+                   discard.
+    """
+    dt = times[1] - times[0]
+    ti = times[0]
+    if discard_start:
+        ti += discard
+    tj = ti + fold
+    tf = times[-1]
+    m = np.full(len(times), False)
+    while tj <= tf + dt:
+        m[((times >= ti) & (times < tj))] = True
+        ti = tj + discard
+        tj = ti + fold
+    return m

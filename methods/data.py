@@ -74,6 +74,24 @@ def load_naiv(path):
     return times, voltage, data
 
 
+def get_naiv_alphas(path):
+    import re
+    if 'NaIVCP' in path:
+        alpha = np.float(re.findall('NaIVCP(\d*)', path)[0])
+        alpha_r = alpha_p = alpha / 100.
+    elif ('NaIVC' in path) and not ('NaIVCP' in path):
+        alpha = np.float(re.findall('NaIVC(\d*)', path)[0])
+        alpha_r = alpha / 100.
+        alpha_p = 0
+    elif ('NaIVP' in path) and not ('NaIVCP' in path):
+        alpha = np.float(re.findall('NaIVC(\d*)', path)[0])
+        alpha_r = 0
+        alpha_p = alpha / 100.
+    else:
+        raise ValueError('Unknown alpha for {path}')
+    return alpha_r, alpha_p
+
+
 def fake_data(model, parameters, sigma, seed=None):
     """
     Generates fake "Alex" style data, by running simulations with the given

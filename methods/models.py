@@ -317,16 +317,11 @@ class VCModel(pints.ForwardModel):
     max_evaluation_time
         The maximum time (in seconds, as a float) allowed for one call to
         ``simulate()``. Simulations that take longer will be terminated.
-    modifier
-        A function to modify the Myokit model before the simulation is created.
-        This is only applied to the "real" simulation, not in any pre pacing at
-        the holding potential. The lambda gets a single model as input, which
-        it can modify in place (no return value needed).
 
     """
     def __init__(self, model_file, fit_kinetics=False, fit_artefacts=False,
                  vc_level=VC_IDEAL, E_leak=None,
-                 max_evaluation_time=60, modifier=None):
+                 max_evaluation_time=60):
         if vc_level == VC_NONE:
             raise ValueError('Unclamped vc-level selected.')
 
@@ -338,8 +333,8 @@ class VCModel(pints.ForwardModel):
         self._max_evaluation_time = max_evaluation_time
 
         # Load model and apply voltage clamp
-        self._model1 = myokit.load_model(model_file)
-        prep = prepare(self._model1, vc_level, self._E_leak is not None)
+        self._model = myokit.load_model(model_file)
+        prep = prepare(self._model, vc_level, self._E_leak is not None)
         self._i_total = prep[0]         # Total current variable
         self._currents = prep[1]        # Fitted current variables
         self._conductances = prep[2]    # Conductance/permeability variables
@@ -368,13 +363,6 @@ class VCModel(pints.ForwardModel):
         self._protocol = None
         self._times = None
 
-        # Modify model 2, if required
-        if modifier is None:
-            self._model2 = self._model1
-        else:
-            self._model2 = self._model1.clone()
-            modifier(self._model2)
-
         # Create simulations
         self._simulation1 = self._simulation2 = None
 
@@ -391,8 +379,8 @@ class VCModel(pints.ForwardModel):
         if self._simulation2 is not None:
             return
 
-        self._simulation1 = myokit.Simulation(self._model1)
-        self._simulation2 = myokit.Simulation(self._model2)
+        self._simulation1 = myokit.Simulation(self._model)
+        self._simulation2 = myokit.Simulation(self._model)
         if self._vc_level == VC_FULL:
             self._simulation2.set_tolerance(1e-8, 1e-10)
             self._simulation2.set_max_step_size(1e-2)  # ms
@@ -403,7 +391,7 @@ class VCModel(pints.ForwardModel):
 
     def code(self):
         """ Returns code representing the internal model, for debugging. """
-        return self._model2.code()
+        return self._model.code()
 
     def current_names(self):
         """
@@ -552,11 +540,11 @@ class VCModel(pints.ForwardModel):
 
     def value(self, label):
         """Returns the initial value of a labelled variable."""
-        return self._model2.label(label).eval()
+        return self._model.label(label).eval()
 
     def variable(self, label):
         """Converts a label to a variable name."""
-        return self._model2.label(label).qname()
+        return self._model.label(label).qname()
 
     def voltage(self, parameters=None):
         """
@@ -567,12 +555,11 @@ class VCModel(pints.ForwardModel):
         # Simulate with modified model
         if parameters is None:
             parameters = np.ones(len(self._parameters))
-        vm = self._model2.labelx('membrane_potential')
+        vm = self._model.labelx('membrane_potential')
         x = self._simulate(parameters, extra=[vm])
         return x[1]
 
-    def set_artefact_parameters(
-            self, parameter_dict):
+    def set_artefact_parameters(self, parameter_dict):
         """
         Set a new set of parameters for the full voltage clamp model.
         """
@@ -592,6 +579,8 @@ class VCModel(pints.ForwardModel):
                 print(f'Setting {var} to {parameter_dict[var]}')
                 self._simulation1.set_constant(var, parameter_dict[var])
                 self._simulation2.set_constant(var, parameter_dict[var])
+            else:
+                print('{var} is not an artefact parameters, skipping.')
         # print(self._original)
 
     def generate_artefact_parameters(
@@ -614,16 +603,8 @@ class VCModel(pints.ForwardModel):
         if self._E_leak is not None:
             artefact_values.append(float(self._E_leak))
 
-        # print(self._original)
-        self._create_simulations()
-        for var, value in zip(self._artefact_vars, artefact_values):
-            # print(f'Setting {var} to {value}')
-            # print(var, self._parameters)
-            if var in self._parameters:
-                self._original[self._parameters.index(var)] = value
-            self._simulation1.set_constant(var, value)
-            self._simulation2.set_constant(var, value)
-        # print(self._original)
+        d = {k:v for k, v in zip(self._artefact_vars, artefact_values)}
+        self.set_artefact_parameters(d)
 
 
 def _generate_artefact_parameters(
