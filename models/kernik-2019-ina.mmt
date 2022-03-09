@@ -22,12 +22,18 @@ desc: """
         Commit 6e8b907f975443ef954863552e784b90799ba5a7
         Retrieved on 2021-07-19
 
+    Units:
+    time in [ms]
+    voltage in [mV]
+    current in [pA]
+    capacitance in [pF]
+    resistance in [GOhm]
 """
 # Initial conditions
-membrane.V = -7.559660163885468e+01
-ina.m      =  2.975499629264136e-02
-ina.h      =  7.395436078124292e-01
-ina.j      =  1.245159825745049e-01
+membrane.V = -100
+ina.m      =  0.01
+ina.h      =  0.8
+ina.j      =  0.1
 
 
 [engine]
@@ -42,18 +48,18 @@ pace = 0
 i_ion = (
     + ina.i_Na
     )
-    in [A/F]
+    in [pA]
     label cellular_current
-dot(V) = -(i_ion + stimulus.i_stim)
+dot(V) = -(i_ion + stimulus.i_stim) / cell.Cm
     label membrane_potential
     in [mV]
 
 
 [stimulus]
 i_stim = engine.pace * amplitude
-    in [A/F]
-amplitude = -3 [A/F]
-    in [A/F]
+    in [pA]
+amplitude = -3 * 60 [pA]
+    in [pA]
 
 
 #
@@ -61,8 +67,8 @@ amplitude = -3 [A/F]
 #
 [ina]
 use membrane.V
-g_Na = 9.720613409241 [nS/pF]
-    in [nS/pF]
+g_Na = 600 [pA/mV]
+    in [nS]
     label g_Na
 m1 = 108.045846384818 [1/ms]
     in [1/ms]
@@ -146,7 +152,7 @@ dot(j) = (inf - j) / tau
     tau = 1 / (a + b) + tau_j_const
         in [ms]
 i_Na = g_Na * m^3 * h * j * (V - erev.E_Na)
-    in [A/F]
+    in [pA]
     label I_Na
 
 
@@ -171,10 +177,6 @@ F = 96.4853415 [C / mmol]
     in [C / mmol]
 RTF = R * T / F
     in [mV]
-FRT = F / (R * T)
-    in [1/mV]
-FFRT = F * FRT
-    in [C/mmol/mV]
 
 
 #

@@ -22,6 +22,7 @@ from . import t_hold, v_hold
 _model_dir = os.path.join(DIR_METHOD, '..', 'models')
 _model_files = {
     'kernik': 'kernik-2019-ina.mmt',
+    'hh': 'hh-ina.mmt',
 }
 
 # Voltage clamp models
@@ -44,7 +45,8 @@ _artefact_variable_names_full = [
     'Cm_est',
     'R_series_est',
     'C_prs_est',
-    'alpha',
+    'alpha_R',
+    'alpha_P',
     'g_leak',
     'g_leak_est',
 ]
@@ -275,10 +277,12 @@ def prepare(model, vc_level=VC_IDEAL, e_leak=False):
             ))
         rhs = myokit.Minus(
             rhs,
-            myokit.Plus(
-                myokit.Name(i_ion),
-                myokit.Name(vc.get('I_leak'))
-            ))
+            myokit.Divide(
+                myokit.Plus(
+                    myokit.Name(i_ion),
+                    myokit.Name(vc.get('I_leak'))
+                ), myokit.Name(cm))
+            )
         vm.set_rhs(rhs)
 
         # Set initial V to v_hold
@@ -594,8 +598,7 @@ class VCModel(pints.ForwardModel):
                 self._simulation2.set_constant(var, parameter_dict[var])
         # print(self._original)
 
-    def generate_artefact_parameters(
-            self, seed=None, smallrs=False, smallcm=False, use_v2=False):
+    def generate_artefact_parameters(self, seed=None):
         """
         Generates and applies a new set of parameters for the full voltage
         clamp model.
@@ -605,11 +608,7 @@ class VCModel(pints.ForwardModel):
                 'Artefact parameters can only be set when using the full'
                 ' voltage-clamp model.')
 
-        if use_v2:
-            artefact_values = _generate_artefact_parameters_2(seed)
-        else:
-            artefact_values = _generate_artefact_parameters(seed, smallrs,
-                                                            smallcm)
+        artefact_values = _generate_artefact_parameters_2(seed)
 
         if self._E_leak is not None:
             artefact_values.append(float(self._E_leak))
@@ -617,101 +616,13 @@ class VCModel(pints.ForwardModel):
         # print(self._original)
         self._create_simulations()
         for var, value in zip(self._artefact_vars, artefact_values):
-            # print(f'Setting {var} to {value}')
+            print(f'Setting {var} to {value}')
             # print(var, self._parameters)
             if var in self._parameters:
                 self._original[self._parameters.index(var)] = value
             self._simulation1.set_constant(var, value)
             self._simulation2.set_constant(var, value)
         # print(self._original)
-
-
-def _generate_artefact_parameters(
-        seed=None, smallrs=False, smallcm=False):
-    # Taken from Lei et al. 2020's synthetics data study
-    # https://github.com/CardiacModelling/VoltageClampModel/
-    #   blob/master/herg-syn-study/syn.py
-
-    # Set mean parameters
-    p_voffset_mean = 0  # mV
-    if smallrs:
-        print('Using small Rs')
-        p_rseries_mean = 4e-3  # GOhm
-    else:
-        p_rseries_mean = 12.5e-3  # GOhm
-    p_cprs_mean = 4.  # pF
-    if smallcm:
-        print('Using small Cm')
-        # from Ma et al. 2011; doi:10.1152/ajpheart.00694.2011 for INa
-        p_cm_mean = 15.8  # pF;
-    else:
-        p_cm_mean = 98.7109  # pF; from Paci model
-
-    alpha_mean = 0.7  # 70% compensation
-
-    # Set std of the parameters
-    std_voffset = 1.5  # mV, see paper 1
-    if smallrs:
-        std_rseries = 1e-3  # GOhm; LogNormal
-    else:
-        std_rseries = 2e-3  # GOhm; LogNormal
-    std_cprs = 1.0  # pF; LogNormal
-    if smallcm:
-        std_cm = 2.0  # pF; LogNormal; for 15.8, 23.3
-    else:
-        std_cm = 5.0  # pF; LogNormal; for 98.7109, 88.7
-    std_est_error = 0.05  # 5% error for each estimation?
-
-    # Fix seed
-    if seed is not None:
-        np.random.seed(seed)
-        fit_seed = np.random.randint(0, 2**30)
-        print('Generating VC artefact with seed: ', fit_seed)
-        np.random.seed(fit_seed)
-
-    # Generate parameter sample
-    voffset = np.random.normal(p_voffset_mean, std_voffset)
-    rseries_logmean = np.log(p_rseries_mean) - 0.5 * np.log(
-        (std_rseries / p_rseries_mean) ** 2 + 1)
-    rseries_scale = np.sqrt(np.log(
-        (std_rseries / p_rseries_mean) ** 2 + 1))
-    rseries = np.random.lognormal(rseries_logmean, rseries_scale)
-    cprs_logmean = np.log(p_cprs_mean) - 0.5 * np.log(
-        (std_cprs / p_cprs_mean) ** 2 + 1)
-    cprs_scale = np.sqrt(np.log((std_cprs / p_cprs_mean) ** 2 + 1))
-    cprs = np.random.lognormal(cprs_logmean, cprs_scale)
-    cm_logmean = np.log(p_cm_mean) - 0.5 * np.log(
-        (std_cm / p_cm_mean) ** 2 + 1)
-    cm_scale = np.sqrt(np.log((std_cm / p_cm_mean) ** 2 + 1))
-    cm = np.random.lognormal(cm_logmean, cm_scale)
-    est_rseries = rseries * (1.0 + np.random.normal(0, std_est_error))
-    est_cm = cm * (1.0 + np.random.normal(0, std_est_error))
-    est_cprs = cprs * (1.0 + np.random.normal(0, std_est_error))
-    alpha = min(1, max(0, np.random.normal(alpha_mean, 0.01)))
-
-    # Lump parameters together
-    p = np.array([
-        cm,  # pF
-        rseries,  # GOhm
-        cprs,  # pF
-        voffset,  # mV
-        est_cm,  # pF
-        est_rseries,  # GOhm
-        est_cprs,  # pF
-        alpha,
-    ])
-
-    # Leak
-    i_s_mean = 1.0  # -> 1.0 GOhm seal resistance
-    i_s_std = 0.1
-    i_s_logmean = np.log(i_s_mean) - 0.5 * np.log(
-        (i_s_std / i_s_mean) ** 2 + 1)
-    i_s_scale = np.sqrt(np.log((i_s_std / i_s_mean) ** 2 + 1))
-    i_s = np.random.lognormal(i_s_logmean, i_s_scale)  # scaled in model
-    est_i_s = i_s * (1.0 + np.random.normal(0, 0.15))  # gleak* ~ +/- 0.15
-    p = np.append(p, [i_s, est_i_s])
-
-    return p
 
 
 def _generate_artefact_parameters_2(seed=None):
@@ -779,9 +690,10 @@ def _generate_artefact_parameters_2(seed=None):
         cprs,  # pF
         voffset,  # mV
         est_cm,  # pF
-        alpha * est_rseries,  # GOhm
+        est_rseries,  # GOhm
         est_cprs,  # pF
-        alpha,
+        alpha,  # alpha_R
+        alpha,  # alpha_P
     ])
 
     # Leak

@@ -12,11 +12,18 @@ desc: """
         Teun P. de Boer, Gary R. Mirams.
         Phil. Trans. R. Soc. A, 378: 20190348, 2020.
         https://doi.org/10.1098/rsta.2019.0348
+
+    Units:
+    time in [ms]
+    voltage in [mV]
+    current in [pA]
+    capacitance in [pF]
+    resistance in [GOhm]
 """
-membrane.V            = -80
-voltage_clamp.V_clamp = -80
-voltage_clamp.V_p     = -80
-voltage_clamp.V_est   = -80
+membrane.V            = -100
+voltage_clamp.V_clamp = -100
+voltage_clamp.V_p     = -100
+voltage_clamp.V_est   = -100
 voltage_clamp.I_out   =  0
 
 #
@@ -33,7 +40,7 @@ pace = 0
 # Cell size: To be replaced with model variable
 #
 [cell]
-Cm = 98.7109 [pF]
+Cm = 60 [pF]
     in [pF]
     desc: Cell capacitance
 
@@ -46,8 +53,9 @@ use voltage_clamp.V_p, voltage_clamp.R_series, voltage_clamp.V_offset_eff
 use voltage_clamp.I_leak
 use cell.Cm
 I_ion = 0
-    in [A/F]
-dot(V) = (V_p + V_offset_eff - V) / (Cm * R_series) - (I_ion + I_leak)
+    in [pF]
+dot(V) = (V_p + V_offset_eff - V) / (Cm * R_series) - (I_ion + I_leak) / Cm
+    desc: Membrane potential
     in [mV]
 
 #
@@ -68,9 +76,12 @@ R_series = 10e-3 [GOhm]
 R_series_est = 0.9 * R_series
     in [GOhm]
     desc: Estimated series resistance
-alpha = 0.7 [1]
+alpha_R = 0.7 [1]
     in [1]
-    desc: Percentage compensation
+    desc: Percentage Rs compensation
+alpha_P = 0.7 [1]
+    in [1]
+    desc: Percentage supercharging/voltage prediction
 C_prs = 4 [pF]
     in [pF]
     desc: 'Parasitic'/pipette capacitance at electrode
@@ -85,7 +96,7 @@ V_offset_eff = 5 [mV]
 tau_sum = 40e-3 [ms]
     in [ms]
     desc: Summation delay (approximately 5--70 us)
-dot(V_clamp) = (V_c + (I_out * Cm + Cm_est * dot(V_est)) * R_series_est * alpha - V_clamp) / tau_sum
+dot(V_clamp) = (V_c + (I_out * alpha_R + Cm_est * dot(V_est) * alpha_P) * R_series_est - V_clamp) / tau_sum
     desc: Clamp voltage
     in [mV]
 
@@ -100,12 +111,12 @@ tau_out = 7.5e-3 [ms]
     in [ms]
     desc: Feedback delay
 dot(I_out) = (I_in - I_out) / tau_out
-    in [A/F]
+    in [pA]
     desc: Measured current
 
 # Supercharging
 # From https://doi.org/10.1007/978-1-4419-1229-9_4 Fig. 18
-dot(V_est) = (V_c - V_est) / ((1 - alpha) * Cm_est * R_series_est)
+dot(V_est) = (V_c - V_est) / ((1 - alpha_P) * Cm_est * R_series_est)
     in [mV]
     desc: Supercharging voltage
 
@@ -116,8 +127,8 @@ g_leak = 2 [pA/mV]
 E_leak = -80 [mV]
     in [mV]
     desc: Leak reversal potential
-I_leak = g_leak * (V - E_leak) / Cm
-    in [A/F]
+I_leak = g_leak * (V - E_leak)
+    in [pA]
     desc: Leak current
 
 I_in = (
@@ -125,15 +136,15 @@ I_in = (
         + C_prs * dot(V_p)
         - C_prs_est * dot(V_clamp)
         - Cm_est * dot(V_est)
-    ) / Cm
-    in [A/F]
+    )
+    in [pA]
 
 # Leak subtracted (post-processed) current
 g_leak_est = 1.5 [pA/mV]
-    in [nS]
+    in [1/GOhm]
     desc: Estimated leak conductance
-I_post = I_out - g_leak_est * (V_c - E_leak) / Cm
-    in [A/F]
+I_post = I_out - g_leak_est * (V_c - E_leak)
+    in [pA]
     desc: Leak subtracted current
     label measured_current
 

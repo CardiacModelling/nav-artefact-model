@@ -52,10 +52,10 @@ def load_named(dname, pname=None, model=None, parameters=None):
 
 def load_naiv(path):
     """
-    Loads an "Alex" file: CSV with current (A/F).
+    Loads an "Alex" file: CSV with current (nA).
 
     Returns a tuple ``(t, v, c)`` where ``t`` is time in ms, ``v`` is voltage
-    in mV, and ``c`` is current in A/F.
+    in mV, and ``c`` is current in nA.
     """
     v_steps = list(_naiv_steps)
     v_hold = -100.  # mV

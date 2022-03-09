@@ -5,15 +5,15 @@ import matplotlib.pyplot as plt
 from methods import models
 from methods import protocols
 
-x = models.VCModel(models.mmt('kernik'), True, True, models.VC_FULL)
-y = models.VCModel(models.mmt('kernik'), True, True, models.VC_IDEAL)
+x = models.VCModel(models.mmt('hh'), True, True, models.VC_FULL)
+y = models.VCModel(models.mmt('hh'), True, True, models.VC_IDEAL)
 p = [
     -80, 10,
     10, 20,
     -80, 10,
 ]
-x.set_protocol(protocols.from_steps(p))
-y.set_protocol(protocols.from_steps(p))
+x.set_protocol(protocols.from_steps(p), dt=0.04)
+y.set_protocol(protocols.from_steps(p), dt=0.04)
 
 print(x.current_names())
 print(x.n_parameters())
