@@ -70,39 +70,14 @@ tr = np.arange(0, dt * len(cr), dt)
 # Set voltage clamp setting
 data.setup_model_vc(dname, model)
 
-# Create boundaries
-class LogRectBounds(pints.RectangularBoundaries):
-    """
-    Rect boundaries, but samples in 2-log space.
-    """
-    def sample(self, n=1):
-        """ See :meth:`pints.Boundaries.sample()`. """
-        lo = np.log2(self._lower)
-        hi = np.log2(self._upper)
-        xs = np.random.uniform(lo, hi, size=(n, self._n_parameters))
-        return 2**xs
-
-
-b = 1000
-boundaries = LogRectBounds(
-    np.ones(n_parameters) / b, np.ones(n_parameters) * b)
-
-# Create score function
-if len(pnames) > 1:
-    problem = pints.MultiOutputProblem(model, tr, crs)
-else:
-    problem = pints.SingleOutputProblem(model, tr, cr)
-error = pints.MeanSquaredError(problem)
-
-# Create transformation for scaling factor parameters
-transformation = pints.LogTransformation(model.n_parameters())
-
-# Try fitting
-path = os.path.join(results, ename)
-utils.fit(path, error, boundaries, transformation, 10, 50)
-
 # Show current best results
+path = os.path.join(results, ename)
 parameters, info = utils.load(
     os.path.join(path, 'result.txt'), n_parameters=n_parameters)
 utils.show_summary(parameters, info)
+
+import matplotlib.pyplot as plt
+plt.plot(tr, crs)
+plt.plot(tr, model.simulate(parameters[0]))
+plt.show()
 
