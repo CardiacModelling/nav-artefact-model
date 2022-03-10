@@ -118,10 +118,10 @@ def fake_data(model, parameters, sigma, seed=None):
 
 def load_info(cname):
     """
-    Return (cm, rs) of the data `cell`.
+    Return (cm, rs) of the data `cell` in pF and GOhm.
     """
     import pandas as pd
     info_file = 'info.csv'
     info = pd.read_csv(f'{DIR_DATA}/{info_file}', index_col=0, header=[0])
     cell = _cnames[cname]
-    return info.loc[cell]['cm'], info.loc[cell]['rs']
+    return info.loc[cell]['cm'], info.loc[cell]['rs'] * 1e-3  # M -> G

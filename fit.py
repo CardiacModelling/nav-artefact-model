@@ -44,6 +44,7 @@ model = models.VCModel(
     fit_artefacts=True,
     vc_level=models.VC_FULL,
     alphas=alphas,
+    E_leak=True,
 )
 model.set_protocol(protocol, dt=dt, v_hold=v_hold, t_hold=t_hold)
 mask = protocols.mask(model.times(), step_duration, discard=discard)
@@ -63,6 +64,18 @@ for pname in pnames:
     crs.append(cr)
 crs = np.asarray(crs).T  # (n_times, n_outputs)
 tr = np.arange(0, dt * len(cr), dt)
+
+# Set voltage clamp setting
+if 'syn' not in dname:
+    cm, rs = data.load_info(dname)
+else:
+    raise NotImplementedError
+model.set_artefact_parameters({
+    'voltage_clamp.Cm_est':cm,
+    'voltage_clamp.R_series_est':rs,
+    'voltage_clamp.g_leak_est':0,
+    'voltage_clamp.E_leak':v_hold,
+})
 
 # Create boundaries
 class LogRectBounds(pints.RectangularBoundaries):
