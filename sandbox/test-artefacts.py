@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from methods import models
 from methods import protocols
 
-x = models.VCModel(models.mmt('hh'), False, False, models.VC_FULL)
+x = models.VCModel(models.mmt('hh'), False, False, models.VC_MIN)
 y = models.VCModel(models.mmt('hh'), False, False, models.VC_IDEAL)
 p = [
     -100, 10,
@@ -20,11 +20,11 @@ print(x.fit_parameter_names())
 x.set_artefact_parameters({
     'cell.Cm': 10.,
     'voltage_clamp.R_series': 6e-3,
-    'voltage_clamp.C_prs': 0,
+    #'voltage_clamp.C_prs': 0,
     'voltage_clamp.V_offset_eff': 0,
     'voltage_clamp.Cm_est': 10.,
     'voltage_clamp.R_series_est': 6e-3,
-    'voltage_clamp.C_prs_est': 0,
+    #'voltage_clamp.C_prs_est': 0,
     #'voltage_clamp.alpha_R': 0.7,
     #'voltage_clamp.alpha_P': 0.7,
     'voltage_clamp.g_leak': 0.5,

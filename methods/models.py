@@ -29,11 +29,25 @@ _model_files = {
 VC_NONE = 0
 VC_IDEAL = 1
 VC_SIMPLE = 10
+VC_MIN = 90  # No Cprs, no (too) fast machine delay
 VC_FULL = 100
-_vc_levels = (VC_NONE, VC_IDEAL, VC_SIMPLE, VC_FULL)
+_vc_levels = (VC_NONE, VC_IDEAL, VC_SIMPLE, VC_MIN, VC_FULL)
 
 # Simple VC: Artefact variable names
 _artefact_variable_names_simple = [
+]
+
+# Minimum VC: Artefact variable names (all in component `voltage_clamp`)
+# Parameters are Cm + this + optionally E_leak
+_artefact_variable_names_min = [
+    'R_series',
+    'V_offset_eff',
+    'Cm_est',
+    'R_series_est',
+    'alpha_R',
+    'alpha_P',
+    'g_leak',
+    'g_leak_est',
 ]
 
 # Full VC: Artefact variable names (all in component `voltage_clamp`)
@@ -53,6 +67,7 @@ _artefact_variable_names_full = [
 
 # Cached artefact models
 _artefact_model_simple = None
+_artefact_model_min = None
 _artefact_model_full = None
 
 
@@ -63,15 +78,21 @@ def mmt(model):
     return os.path.join(_model_dir, _model_files[model])
 
 
-def load_artefact_model(full=False):
+def load_artefact_model(level=VC_FULL):
     """ Loads and returns an artefact model (or retrieves it from cache). """
-    if full:
+    if level == VC_FULL:
         global _artefact_model_full
         if _artefact_model_full is None:
             _artefact_model_full = myokit.load_model(os.path.join(
                 _model_dir, 'voltage-clamp.mmt'))
         return _artefact_model_full
-    else:
+    elif level == VC_MIN:
+        global _artefact_model_min
+        if _artefact_model_min is None:
+            _artefact_model_min = myokit.load_model(os.path.join(
+                _model_dir, 'minimum-voltage-clamp.mmt'))
+        return _artefact_model_min
+    elif level == VC_SIMPLE:
         global _artefact_model_simple
         if _artefact_model_simple is None:
             _artefact_model_simple = myokit.load_model(os.path.join(
@@ -219,7 +240,7 @@ def prepare(model, vc_level=VC_IDEAL, e_leak=False):
         vm.clamp(0)
         vm.set_binding('pace')
 
-    elif vc_level in (VC_SIMPLE, VC_FULL):
+    elif vc_level in (VC_SIMPLE, VC_MIN, VC_FULL):
         # Make sure something is bound to 'pace'
         pace = model.binding('pace')
         if pace is None:
@@ -243,13 +264,15 @@ def prepare(model, vc_level=VC_IDEAL, e_leak=False):
             'membrane.V': vm,
             'cell.Cm': cm,
         }
-        am = load_artefact_model(vc_level == VC_FULL)
+        am = load_artefact_model(vc_level)
         model.import_component(am.get('voltage_clamp'), var_map=var_map)
         vc = model.get('voltage_clamp')
 
         # Add in remaining artefact parameters
         if vc_level == VC_FULL:
             required = _artefact_variable_names_full
+        elif vc_level == VC_MIN:
+            required = _artefact_variable_names_min
         else:
             required = _artefact_variable_names_simple
         if e_leak:
@@ -288,6 +311,12 @@ def prepare(model, vc_level=VC_IDEAL, e_leak=False):
         # Set initial V to v_hold
         vm.set_state_value(v_hold)
 
+    # Final observed current
+    if vc_level == VC_IDEAL:
+        i_out = i_ion
+    elif vc_level in (VC_SIMPLE, VC_MIN, VC_FULL):
+        i_out = model.labelx('measured_current')
+
     # Validate final model
     # TODO: At this point we can use model.validate(True) to remove any unused
     # variables (which will not remove bound variables, but will remove
@@ -298,7 +327,7 @@ def prepare(model, vc_level=VC_IDEAL, e_leak=False):
     model.validate()  # remove_unused_variables=True)
     # print(model.code())
 
-    return i_ion, currents, conductances, kinetics, artefact_variables, \
+    return i_out, currents, conductances, kinetics, artefact_variables, \
            all_c_clamped
 
 
@@ -317,7 +346,7 @@ class VCModel(pints.ForwardModel):
     model_file
         An ``mmt`` model file for an annotated cell model.
     vc_level
-        Set to ``models.VC_IDEAL``, ``models.VC_SIMPLE``, or ``models.VC_FULL``
+        Set to ``models.VC_IDEAL``, ``models.VC_MIN``, or ``models.VC_FULL``
         to use ideal, simplified, or full artefact model.
     alphas
         Levels for Rs compensation and supercharging/voltage prediction:
@@ -336,7 +365,7 @@ class VCModel(pints.ForwardModel):
     """
     def __init__(self, model_file, fit_kinetics=False, fit_artefacts=False,
                  vc_level=VC_IDEAL, alphas=None, E_leak=None,
-                 max_evaluation_time=60):
+                 max_evaluation_time=10):
         if vc_level == VC_NONE:
             raise ValueError('Unclamped vc-level selected.')
 
@@ -351,7 +380,7 @@ class VCModel(pints.ForwardModel):
         # Load model and apply voltage clamp
         self._model = myokit.load_model(model_file)
         prep = prepare(self._model, vc_level, self._E_leak is not None)
-        self._i_total = prep[0]         # Total current variable
+        self._i_observed = prep[0]      # Total current variable
         self._currents = prep[1]        # Fitted current variables
         self._conductances = prep[2]    # Conductance/permeability variables
         self._kinetics = prep[3]        # kinetics variables
@@ -397,7 +426,7 @@ class VCModel(pints.ForwardModel):
 
         self._simulation1 = myokit.Simulation(self._model)
         self._simulation2 = myokit.Simulation(self._model)
-        if self._vc_level == VC_FULL:
+        if (self._vc_level == VC_FULL) or (self._vc_level == VC_MIN):
             self._simulation2.set_tolerance(1e-8, 1e-10)
             self._simulation2.set_max_step_size(1e-2)  # ms
         elif self._vc_level == VC_SIMPLE:
@@ -414,7 +443,7 @@ class VCModel(pints.ForwardModel):
         Returns the names of the (known) current variables in this model, and
         the name of the total current variable.
         """
-        return list(self._currents), self._i_total
+        return list(self._currents), self._i_observed
 
     def n_parameters(self):
         """ PINTS n_parameters. """
@@ -501,20 +530,21 @@ class VCModel(pints.ForwardModel):
         # Set model parameters (as original_value * scaling)
         self._update_fit_parameters(parameters)
 
-        # Pre-pace
+        # Holding potential
         self._simulation2.reset()
         if self._t_hold > 0:
             self._simulation1.reset()
             self._simulation1.run(self._t_hold, log=myokit.LOG_NONE)
             self._simulation2.set_state(self._simulation1.state())
 
+        # Protocol
         return self._simulation2.run(
             self._times[-1] + 0.02, log_times=self._times)
 
     def _simulate(self, parameters, extra=None):
         """
         Internal method to run a (pre-simulation and) simulation.
-        Return (nan) if simulation fails.
+        Return (inf) if simulation fails.
         """
         if self._times is None:
             raise RuntimeError('No protocol set; unable to simulate.')
@@ -523,19 +553,19 @@ class VCModel(pints.ForwardModel):
         # Set model parameters (as original_value * scaling)
         self._update_fit_parameters(parameters)
 
-        # Pre-pace
-        self._simulation2.reset()
-        if self._t_hold > 0:
-            self._simulation1.reset()
-            self._simulation1.run(self._t_hold, log=myokit.LOG_NONE)
-            self._simulation2.set_state(self._simulation1.state())
-
         # Variables to log
-        log = [self._i_total]
+        log = [self._i_observed]
         if extra is not None:
             log += extra
 
         try:
+            # Holding potential
+            self._simulation2.reset()
+            if self._t_hold > 0:
+                self._simulation1.reset()
+                self._simulation1.run(self._t_hold, log=myokit.LOG_NONE)
+                self._simulation2.set_state(self._simulation1.state())
+            # Protocol
             d = self._simulation2.run(
                 self._times[-1] + 0.02,
                 log_times=self._times,
@@ -547,7 +577,7 @@ class VCModel(pints.ForwardModel):
             return np.asarray([d[key] for key in log])
         except (myokit.SimulationError, myokit.SimulationCancelledError):
             # Return array of NaNs
-            return np.ones((len(log), len(self._times))) * float('nan')
+            return np.ones((len(log), len(self._times))) * float('inf')
 
     def simulate(self, parameters, times=None):
         """
@@ -607,7 +637,7 @@ class VCModel(pints.ForwardModel):
         """
         Set a new set of parameters for the full voltage clamp model.
         """
-        if self._vc_level != VC_FULL:
+        if (self._vc_level != VC_FULL) and (self._vc_level != VC_MIN):
             raise RuntimeError(
                 'Artefact parameters can only be set when using the full'
                 ' voltage-clamp model.')
@@ -634,11 +664,6 @@ class VCModel(pints.ForwardModel):
         Generates and applies a new set of parameters for the full voltage
         clamp model.
         """
-        if self._vc_level != VC_FULL:
-            raise RuntimeError(
-                'Artefact parameters can only be set when using the full'
-                ' voltage-clamp model.')
-
         artefact_values = _generate_artefact_parameters_2(seed)
 
         if self._E_leak is not None:
