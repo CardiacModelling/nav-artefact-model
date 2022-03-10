@@ -11,12 +11,17 @@ import pints
 from methods import data, utils, models, protocols
 from methods import results, run, t_hold, v_hold
 
-# Get model name, protocol name, data name, and experiment name
-mname, pnames, dname, ename = utils.cmd('Perform a fit')
+# Get model name, vc level, protocol name, data name, and experiment name
+mname, level, pnames, dname, ename = utils.cmd('Perform a fit')
 
 # Show user what's happening
 print('=' * 79)
-print(' '.join([f'Run {run}', mname, ' '.join(pnames), dname, f't_hold {t_hold}']))
+print(' '.join([f'Run {run}',
+                mname,
+                f'vc_level {level}',
+                ' '.join(pnames),
+                dname,
+                f't_hold {t_hold}']))
 print('=' * 79)
 
 # Load protocol
@@ -39,8 +44,8 @@ model = models.VCModel(
     models.mmt(mname),
     fit_kinetics=True,
     fit_artefacts=True,
-    vc_level=models.VC_MIN,
-    alphas=alphas,
+    vc_level=level,
+    alphas=alphas if level != models.VC_IDEAL else None,
     E_leak=True,
 )
 model.set_protocol(protocol, dt=dt, v_hold=v_hold, t_hold=t_hold)
@@ -63,21 +68,8 @@ crs = np.asarray(crs).T  # (n_times, n_outputs)
 tr = np.arange(0, dt * len(cr), dt)
 
 # Set voltage clamp setting
-if 'syn' not in dname:
-    cm, rs = data.load_info(dname)
-else:
-    raise NotImplementedError
-g_leak = 1. # 1 GOhm seal
-model.set_artefact_parameters({
-    'voltage_clamp.Cm_est':cm,
-    'voltage_clamp.R_series_est':rs,
-    'voltage_clamp.g_leak_est':g_leak,
-    # Values to infer by scaling
-    'cell.Cm':cm,
-    'voltage_clamp.R_series':rs,
-    'voltage_clamp.g_leak':g_leak,
-    'voltage_clamp.E_leak':0,
-})
+data.setup_model_vc(dname, model)
+
 
 
 import matplotlib.pyplot as plt

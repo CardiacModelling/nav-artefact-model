@@ -438,6 +438,10 @@ class VCModel(pints.ForwardModel):
         """ Returns code representing the internal model, for debugging. """
         return self._model.code()
 
+    def vc_level(self):
+        """ Return the vc_level of this model. """
+        return self._vc_level
+
     def current_names(self):
         """
         Returns the names of the (known) current variables in this model, and

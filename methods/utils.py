@@ -10,7 +10,7 @@ import numpy as np
 
 import pints
 
-from . import data
+from . import data, models
 
 
 class reserve_base_name(object):
@@ -446,10 +446,21 @@ def cmd(title):
         choices=data.data_sets(),
         default='cell1',
         help='The data to use')
+    parser.add_argument(
+        '-l', '--level',
+        nargs='?',
+        type=int,
+        choices=models._vc_levels,
+        default=models.VC_MIN,
+        help='Level of VC model.')
     args = parser.parse_args()
 
     # Experiment name
-    name = f'results-test-{args.model}-{args.data}-{"-".join(args.protocol)}'
+    name = f'results-test'
+    name += f'-{args.model}'
+    name += f'-vc{args.level}'
+    name += f'-{args.data}'
+    name += f'-{"-".join(args.protocol)}'
 
-    return args.model, args.protocol, args.data, name
+    return args.model, args.level, args.protocol, args.data, name
 

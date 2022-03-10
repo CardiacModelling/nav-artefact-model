@@ -4,7 +4,7 @@
 import myokit
 import numpy as np
 
-from . import DIR_METHOD
+from . import DIR_METHOD, models
 
 _cnames = {# ID, file_name
     'cell1':'220128_006_ch2_csv',
@@ -125,3 +125,27 @@ def load_info(cname):
     info = pd.read_csv(f'{DIR_DATA}/{info_file}', index_col=0, header=[0])
     cell = _cnames[cname]
     return info.loc[cell]['cm'], info.loc[cell]['rs'] * 1e-3  # M -> G
+
+
+def setup_model_vc(dname, model):
+    """
+    Prepare VCModel object for voltage clamp parameters with a given dname.
+    """
+    is_full = model.vc_level() == models.VC_FULL
+    is_min = model.vc_level() == models.VC_MIN
+    if is_full or is_min:
+        if 'syn' not in dname:
+            cm, rs = load_info(dname)
+            g_leak = 1. # 1 GOhm seal; TODO Update this by experimental data.
+        else:
+            raise NotImplementedError
+        model.set_artefact_parameters({
+            'voltage_clamp.Cm_est':cm,
+            'voltage_clamp.R_series_est':rs,
+            'voltage_clamp.g_leak_est':g_leak,
+            # Values to infer by scaling
+            'cell.Cm':cm,
+            'voltage_clamp.R_series':rs,
+            'voltage_clamp.g_leak':g_leak,
+            'voltage_clamp.E_leak':0,  # Imperfect seal leak
+        })
