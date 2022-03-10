@@ -33,7 +33,7 @@ if run == 1:
     # Voltage, concentrations clamped
     results = 'results'
 
-    t_hold = 0  # ms
+    t_hold = 2000  # ms
     v_hold = -100  # mV
 
 else:

@@ -39,7 +39,7 @@ model = models.VCModel(
     models.mmt(mname),
     fit_kinetics=True,
     fit_artefacts=True,
-    vc_level=models.VC_FULL,
+    vc_level=models.VC_MIN,
     alphas=alphas,
     E_leak=True,
 )
@@ -67,12 +67,26 @@ if 'syn' not in dname:
     cm, rs = data.load_info(dname)
 else:
     raise NotImplementedError
+g_leak = 1. # 1 GOhm seal
 model.set_artefact_parameters({
     'voltage_clamp.Cm_est':cm,
     'voltage_clamp.R_series_est':rs,
-    'voltage_clamp.g_leak_est':0,
-    'voltage_clamp.E_leak':v_hold,
+    'voltage_clamp.g_leak_est':g_leak,
+    # Values to infer by scaling
+    'cell.Cm':cm,
+    'voltage_clamp.R_series':rs,
+    'voltage_clamp.g_leak':g_leak,
+    'voltage_clamp.E_leak':0,
 })
+
+
+import matplotlib.pyplot as plt
+plt.plot(tr, crs)
+plt.plot(tr, model.simulate(np.ones(model.n_parameters())))
+plt.show()
+
+
+
 
 # Create boundaries
 class LogRectBounds(pints.RectangularBoundaries):
