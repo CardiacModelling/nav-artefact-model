@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from methods import models
 from methods import protocols
 
-x = models.VCModel(models.mmt('hh'), True, True, models.VC_FULL)
+x = models.VCModel(models.mmt('hh'), True, True, models.VC_MIN)
 y = models.VCModel(models.mmt('hh'), True, True, models.VC_IDEAL)
 p = protocols.load('../protocols/ina-steps-no-holding.txt')
 #p = protocols.load('../protocols/ina-steps.txt')

@@ -664,7 +664,7 @@ class VCModel(pints.ForwardModel):
         Generates and applies a new set of parameters for the full voltage
         clamp model.
         """
-        artefact_values = _generate_artefact_parameters_2(seed)
+        artefact_values = _generate_artefact_parameters_2(seed, self._vc_level)
 
         if self._E_leak is not None:
             artefact_values.append(float(self._E_leak))
@@ -673,7 +673,7 @@ class VCModel(pints.ForwardModel):
         self.set_artefact_parameters(d)
 
 
-def _generate_artefact_parameters_2(seed=None):
+def _generate_artefact_parameters_2(seed=None, level=VC_FULL):
     import scipy.stats as stats
 
     # Taken from Alex Clark's hiPSC-CM experiments
@@ -732,17 +732,30 @@ def _generate_artefact_parameters_2(seed=None):
     alpha = min(1, max(0, np.random.normal(alpha_mean, 0.01)))
 
     # Lump parameters together
-    p = np.array([
-        cm,  # pF
-        rseries,  # GOhm
-        cprs,  # pF
-        voffset,  # mV
-        est_cm,  # pF
-        est_rseries,  # GOhm
-        est_cprs,  # pF
-        alpha,  # alpha_R
-        alpha,  # alpha_P
-    ])
+    if level == VC_FULL:
+        p = np.array([
+            cm,  # pF
+            rseries,  # GOhm
+            cprs,  # pF
+            voffset,  # mV
+            est_cm,  # pF
+            est_rseries,  # GOhm
+            est_cprs,  # pF
+            alpha,  # alpha_R
+            alpha,  # alpha_P
+        ])
+    elif level == VC_MIN:
+        p = np.array([
+            cm,  # pF
+            rseries,  # GOhm
+            voffset,  # mV
+            est_cm,  # pF
+            est_rseries,  # GOhm
+            alpha,  # alpha_R
+            alpha,  # alpha_P
+        ])
+    else:
+        raise ValueError('Unknown VC level {level}.')
 
     # Leak
     i_s_mean = 0.745  # GOhm
