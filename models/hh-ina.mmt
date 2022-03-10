@@ -31,12 +31,14 @@ i_ion = (
     )
     in [pA]
     label cellular_current
-dot(V) = (engine.pace * 1 [mV] - V) / 1e-3 [ms]
+dot(V) = (engine.pace * 1 [mV] - V) / 1e-6 [ms]
+    desc: Ideal-voltage-clamp membrane voltage (to be replaced)
     label membrane_potential
     in [mV]
 
 #
 # Sodium Current (INa)
+# Parameters from: https://doi.org/10.1371/journal.pcbi.1009145
 #
 [ina]
 use membrane.V
@@ -51,7 +53,7 @@ m2 = 13.78 [mV]
     in [mV]
     label k_Na_2
 #m3 = 0.6628 [1/ms]
-m3 = 0.1276 [1/ms]
+m3 = 0.1276 #* 100 [1/ms]    # <-------------------------------- Key parameter?
     in [1/ms]
     label k_Na_3
 m4 = -23.25 [mV]
