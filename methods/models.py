@@ -584,7 +584,7 @@ class VCModel(pints.ForwardModel):
                 self._simulation1.set_constant(var, parameter_dict[var])
                 self._simulation2.set_constant(var, parameter_dict[var])
             else:
-                print('{var} is not an artefact parameters, skipping.')
+                print(f'{var} is not an artefact parameters, skipping.')
         # print(self._original)
 
     def generate_artefact_parameters(self, seed=None):
@@ -602,7 +602,7 @@ class VCModel(pints.ForwardModel):
         if self._E_leak is not None:
             artefact_values.append(float(self._E_leak))
 
-        d = {k:v for k, v in zip(self._artefact_vars, artefact_values)}
+        d = {str(k):v for k, v in zip(self._artefact_vars, artefact_values)}
         self.set_artefact_parameters(d)
 
 
