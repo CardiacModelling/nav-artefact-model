@@ -444,7 +444,7 @@ def cmd(title):
         '-d', '--data',
         nargs='?',
         choices=data.data_sets(),
-        default='cell0',
+        default='cell1',
         help='The data to use')
     args = parser.parse_args()
 

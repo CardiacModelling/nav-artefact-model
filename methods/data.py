@@ -7,8 +7,8 @@ import numpy as np
 from . import DIR_METHOD
 
 _cnames = {# ID, file_name
-    'cell0':'220128_006_ch2_csv',
-    'cell1':'220210_003_ch3_csv',
+    'cell1':'220128_006_ch2_csv',
+    'cell2':'220210_003_ch3_csv',
 }
 
 _naiv_steps = [-80, -70, -60, -50, -40, -30, -20, -10, 0, 10, 20, 30, 40]  # mV
