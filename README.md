@@ -2,6 +2,13 @@
 
 This is a repository to share code for the NaV artefact modelling project with Christini's group.
 
+### Units
+- time in [ms]
+- voltage in [mV]
+- current in [pA]
+- capacitance in [pF]
+- resistance in [GOhm]
+
 ### Files
 
 
