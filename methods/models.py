@@ -307,6 +307,11 @@ class VCModel(pints.ForwardModel):
     A :class`pints.ForwardModel` representing a cell under voltage-clamp
     conditions.
 
+    Simulation parameters (aka fitting parameters) are *scaling factors* to the
+    original parameter values; only `voltage_clamp.V_offset_eff` is set to the
+    natural logarithm of the input parameter value (as it is the only parameter
+    that can take negative values).
+
     Parameters
     ----------
     model_file
@@ -314,6 +319,12 @@ class VCModel(pints.ForwardModel):
     vc_level
         Set to ``models.VC_IDEAL``, ``models.VC_SIMPLE``, or ``models.VC_FULL``
         to use ideal, simplified, or full artefact model.
+    alphas
+        Levels for Rs compensation and supercharging/voltage prediction:
+        [(alpha_r_1, alpha_p_1), (alpha_r_2, alpha_p_2)] as a list of tuple
+        inputs. The length of the list will determine the number of outputs
+        during simulation: (n_times, n_outputs); if None, n_outputs=1, and
+        alpha values can be set with `meth`:set_artefact_parameters().
     E_leak
         If using the full voltage-clamp model, this can be used to set an
         estimated leak reversal potential (if not set, the voltage-clamp model
@@ -324,7 +335,7 @@ class VCModel(pints.ForwardModel):
 
     """
     def __init__(self, model_file, fit_kinetics=False, fit_artefacts=False,
-                 vc_level=VC_IDEAL, E_leak=None,
+                 vc_level=VC_IDEAL, alphas=None, E_leak=None,
                  max_evaluation_time=60):
         if vc_level == VC_NONE:
             raise ValueError('Unclamped vc-level selected.')
@@ -333,6 +344,7 @@ class VCModel(pints.ForwardModel):
         self._model_file = model_file
         self._model_file_name = os.path.basename(model_file)
         self._vc_level = int(vc_level)
+        self._alphas = alphas
         self._E_leak = None if vc_level == VC_IDEAL else E_leak
         self._max_evaluation_time = max_evaluation_time
 
@@ -379,7 +391,7 @@ class VCModel(pints.ForwardModel):
         #     self.generate_artefact_parameters()
 
     def _create_simulations(self):
-        """Creates the simulation engines for this model."""
+        """Internal method to create the simulation engines for this model."""
         if self._simulation2 is not None:
             return
 
@@ -405,13 +417,24 @@ class VCModel(pints.ForwardModel):
         return list(self._currents), self._i_total
 
     def n_parameters(self):
+        """ PINTS n_parameters. """
         return len(self._parameters)
 
+    def n_outputs(self):
+        """ PINTS n_outputs. """
+        return len(self._alphas) if self._alphas is not None else 1
+
     def full_parameter_names(self):
+        """ Return the names of all the tunable parameters. """
         return list(self._parameter_names)
 
     def fit_parameter_names(self):
+        """ Return the names of the fitting parameters. """
         return [str(v) for v in self._parameters]
+
+    def original_parameters(self):
+        """ Return the original values of the fitting parameters. """
+        return self._original
 
     def set_protocol(self, p, mask=None, dt=0.1, v_hold=v_hold, t_hold=t_hold):
         """
@@ -455,17 +478,28 @@ class VCModel(pints.ForwardModel):
         if mask is not None:
             self._times = self._times[mask]
 
+    def _update_fit_parameters(self, parameters):
+        """
+        Internal method to update the fitting parameters.
+        """
+        # Set model parameters (as original_value * scaling)
+        for v, x, y in zip(self._parameters, self._original, parameters):
+            if str(v) == 'voltage_clamp.V_offset_eff':  # TODO Maybe less hacky
+                x = 1
+                y = np.log(y)
+                #print(y)
+            self._simulation1.set_constant(v, x * y)
+            self._simulation2.set_constant(v, x * y)
+
     def simulate_full(self, parameters):
-        """ Runs a simulation and returns a myokit DataLog. """
+        """
+        Runs a simulation and returns a myokit DataLog.
+        This method does not attempt try and except.
+        """
         self._create_simulations()
 
         # Set model parameters (as original_value * scaling)
-        for v, x, y in zip(self._parameters, self._original, parameters):
-            if str(v) == 'V_offset_eff':  # TODO Maybe less hacky
-                x = 1
-                y = np.log(y)
-            self._simulation1.set_constant(v, x * y)
-            self._simulation2.set_constant(v, x * y)
+        self._update_fit_parameters(parameters)
 
         # Pre-pace
         self._simulation2.reset()
@@ -478,18 +512,16 @@ class VCModel(pints.ForwardModel):
             self._times[-1] + 0.02, log_times=self._times)
 
     def _simulate(self, parameters, extra=None):
-        """Internal method to run a (pre-simulation and) simulation."""
+        """
+        Internal method to run a (pre-simulation and) simulation.
+        Return (nan) if simulation fails.
+        """
         if self._times is None:
             raise RuntimeError('No protocol set; unable to simulate.')
         self._create_simulations()
 
         # Set model parameters (as original_value * scaling)
-        for v, x, y in zip(self._parameters, self._original, parameters):
-            if str(v) == 'V_offset_eff':  # TODO Maybe less hacky
-                x = 1
-                y = np.log(y)
-            self._simulation1.set_constant(v, x * y)
-            self._simulation2.set_constant(v, x * y)
+        self._update_fit_parameters(parameters)
 
         # Pre-pace
         self._simulation2.reset()
@@ -531,9 +563,17 @@ class VCModel(pints.ForwardModel):
             Unused: included only to match PINTS' ForwardModel interface.
         """
         # Full simulation
-        i = self._simulate(parameters)[0]
+        if self._alphas is None:
+            return self._simulate(parameters)[0]
 
-        return i
+        out = []
+        for r, p in self._alphas:
+            self.set_artefact_parameters(
+                {'voltage_clamp.alpha_R':r, 'voltage_clamp.alpha_P':p},
+                verbose=False
+            )
+            out.append(self._simulate(parameters)[0])
+        return np.asarray(out).T
 
     def times(self):
         """
@@ -563,7 +603,7 @@ class VCModel(pints.ForwardModel):
         x = self._simulate(parameters, extra=[vm])
         return x[1]
 
-    def set_artefact_parameters(self, parameter_dict):
+    def set_artefact_parameters(self, parameter_dict, verbose=True):
         """
         Set a new set of parameters for the full voltage clamp model.
         """
@@ -580,11 +620,13 @@ class VCModel(pints.ForwardModel):
             if var in str_artefact_vars:
                 if var in str_parameters:
                     self._original[str_parameters.index(var)] = parameter_dict[var]
-                print(f'Setting {var} to {parameter_dict[var]}')
+                if verbose:
+                    print(f'Setting {var} to {parameter_dict[var]}')
                 self._simulation1.set_constant(var, parameter_dict[var])
                 self._simulation2.set_constant(var, parameter_dict[var])
             else:
-                print(f'{var} is not an artefact parameters, skipping.')
+                if verbose:
+                    print(f'{var} is not an artefact parameters, skipping.')
         # print(self._original)
 
     def generate_artefact_parameters(self, seed=None):
