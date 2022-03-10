@@ -55,7 +55,7 @@ def load_naiv(path):
     Loads an "Alex" file: CSV with current (nA).
 
     Returns a tuple ``(t, v, c)`` where ``t`` is time in ms, ``v`` is voltage
-    in mV, and ``c`` is current in nA.
+    in mV, and ``c`` is current in pA.
     """
     v_steps = list(_naiv_steps)
     v_hold = -100.  # mV
@@ -71,6 +71,7 @@ def load_naiv(path):
         vt = np.append(vt, float(v_hold) * np.ones(int(t_hold / dt)))
         voltage[v] = vt
         data[v] = np.loadtxt(f'{path}/step_{v}.csv', delimiter=',')
+        data[v] *= 1e3  # nA -> pA
     return times, voltage, data
 
 

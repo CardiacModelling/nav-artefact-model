@@ -425,8 +425,8 @@ def cmd(title):
     parser.add_argument(
         '-m', '--model',
         nargs='?',
-        choices=['kernik'],
-        default='kernik',
+        choices=['hh', 'kernik'],
+        default='hh',
         help='The model to use')
     parser.add_argument(
         '-p', '--protocol',

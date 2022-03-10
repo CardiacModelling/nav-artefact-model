@@ -11,7 +11,7 @@ for vi in v.keys():
     axes[1].plot(t, c[vi])
 axes[-1].set_xlabel('Time (ms)')
 axes[0].set_ylabel('Voltage (mV)')
-axes[1].set_ylabel('Current (nA)')
+axes[1].set_ylabel('Current (pA)')
 
 plt.show()
 
@@ -25,6 +25,6 @@ for cp in range(0, 90, 10):
 axes[1].set_xlim([9.5, 12.5])
 axes[-1].set_xlabel('Time (ms)')
 axes[0].set_ylabel('Voltage (mV)')
-axes[1].set_ylabel('Current (nA)')
+axes[1].set_ylabel('Current (pA)')
 
 plt.show()
