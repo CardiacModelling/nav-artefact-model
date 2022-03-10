@@ -8,14 +8,14 @@ import os
 import numpy as np
 import pints
 
-from methods import data, fitio, models, protocols
+from methods import data, utils, models, protocols
 from methods import results, run, t_hold, v_hold
 
 # Set random seed
 np.random.seed(0)
 
 # Get model name, protocol name, data name, and experiment name
-mname, pnames, dname, ename = fitio.cmd('Perform a fit')
+mname, pnames, dname, ename = utils.cmd('Perform a fit')
 
 # Show user what's happening
 print('=' * 79)
@@ -106,10 +106,10 @@ transformation = pints.LogTransformation(model.n_parameters())
 
 # Try fitting
 path = os.path.join(results, ename)
-fitio.fit(path, error, boundaries, transformation, 10, 50)
+utils.fit(path, error, boundaries, transformation, 10, 50)
 
 # Show current best results
-parameters, info = fitio.load(
+parameters, info = utils.load(
     os.path.join(path, 'result.txt'), n_parameters=n_parameters)
-fitio.show_summary(parameters, info)
+utils.show_summary(parameters, info)
 
