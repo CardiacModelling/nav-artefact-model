@@ -430,11 +430,11 @@ def cmd(title):
         help='The model to use')
     parser.add_argument(
         '-p', '--protocol',
-        nargs='?',
+        nargs='+',
         choices=[f'NaIVCP{i}' for i in np.arange(0, 90, 10)] \
                 + [f'NaIVC{i}' for i in np.arange(0, 90, 10)] \
                 + [f'NaIVP{i}' for i in np.arange(0, 90, 10)],
-        default='NaIVCP80',
+        default=['NaIVCP80'],
         help='The protocol to use')
     parser.add_argument(
         '-d', '--data',
@@ -445,7 +445,7 @@ def cmd(title):
     args = parser.parse_args()
 
     # Experiment name
-    name = f'results-test-{args.model}-{args.data}-{args.protocol}'
+    name = f'results-test-{args.model}-{args.data}-{"-".join(args.protocol)}'
 
     return args.model, args.protocol, args.data, name
 

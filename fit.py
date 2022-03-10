@@ -12,11 +12,12 @@ from methods import data, fitio, models, protocols
 from methods import results, run, t_hold, v_hold
 
 # Get model name, protocol name, data name, and experiment name
-mname, pname, dname, ename = fitio.cmd('Perform a fit')
+mname, pnames, dname, ename = fitio.cmd('Perform a fit')
+print(pnames, ename)
 
 # Show user what's happening
 print('=' * 79)
-print(' '.join([f'Run {run}', mname, pname, dname, f't_hold {t_hold}']))
+print(' '.join([f'Run {run}', mname, ' '.join(pnames), dname, f't_hold {t_hold}']))
 print('=' * 79)
 
 # Load protocol
@@ -27,16 +28,24 @@ dt = 0.04
 print('Initialising model...')
 model = models.VCModel(models.mmt(mname), True, True, models.VC_FULL)
 model.set_protocol(protocol, dt=dt, v_hold=v_hold, t_hold=t_hold)
+mask = protocols.mask(model.times(), 40, discard=2000, discard_start=False)
+model.set_protocol(protocol, dt=dt, v_hold=v_hold, t_hold=t_hold, mask=mask)
 
 # Create parameter vector
 n_parameters = model.n_parameters()
 parameters_true = np.ones(n_parameters)
 
 # Generate or load data
-tr, vr_d, cr_d = data.load_named(dname, pname, model, parameters_true)
-cr = []
-for v in data._naiv_steps:
-    cr = np.append(cr, cr_d[v])
+crs = []
+for pname in pnames:
+    alpha_r, alpha_p = data.get_naiv_alphas(pname)
+    print(alpha_r, alpha_p)
+    tr, vr_d, cr_d = data.load_named(dname, pname, model, parameters_true)
+    cr = []
+    for v in data._naiv_steps:
+        cr = np.append(cr, cr_d[v])
+    crs.append(cr)
+crs = np.asarray(crs).T  # (n_times, n_outputs)
 tr = np.arange(0, dt * len(cr), dt)
 
 # Create boundaries
@@ -57,7 +66,10 @@ boundaries = LogRectBounds(
     np.ones(n_parameters) / b, np.ones(n_parameters) * b)
 
 # Create score function
-problem = pints.SingleOutputProblem(model, tr, cr)
+if len(pnames) > 1:
+    problem = pints.MultiOutputProblem(model, tr, crs)  # Change model to give n outputs
+else:
+    problem = pints.SingleOutputProblem(model, tr, cr)
 error = pints.MeanSquaredError(problem)
 
 # Try fitting
