@@ -11,9 +11,6 @@ import pints
 from methods import data, utils, models, protocols
 from methods import results, run, t_hold, v_hold
 
-# Set random seed
-np.random.seed(0)
-
 # Get model name, protocol name, data name, and experiment name
 mname, pnames, dname, ename = utils.cmd('Perform a fit')
 

@@ -358,6 +358,8 @@ def fit(name, error, boundaries, transformation=None, repeats=1, cap=None):
                 print()
                 return
             cap_info = ' (run ' + str(n + 1) + ', capped at ' + str(cap) + ')'
+            # NOTE: Set seed for each run
+            np.random.seed(n + 1)
 
         # Show configuration
         print()
@@ -375,6 +377,8 @@ def fit(name, error, boundaries, transformation=None, repeats=1, cap=None):
             while not np.isfinite(s0):
                 p0 = boundaries.sample(1)[0]
                 s0 = error(p0)
+            print('p0:', p0)
+            print('s0:', s0)
 
             # Create a file path to store the optimisation log in
             log_path = os.path.splitext(path)
