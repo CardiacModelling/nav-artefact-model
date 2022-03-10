@@ -1,2 +1,3 @@
 pints>=0.4.0
 myokit>=1.33.0
+pandas>=1.4.0
