@@ -59,7 +59,7 @@ parameters_true = np.ones(n_parameters)
 # Generate or load data
 crs = []
 for pname in pnames:
-    tr, vr_d, cr_d = data.load_named(dname, pname, model, parameters_true)
+    tr, vr_d, cr_d = data.load_named(dname, pname, model, parameters_true, shift=True)
     cr = []
     for v in v_steps:
         cr = np.append(cr, cr_d[v])

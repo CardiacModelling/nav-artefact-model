@@ -24,7 +24,7 @@ def data_sets(include_synth=True):
     return names
 
 
-def load_named(dname, pname=None, model=None, parameters=None):
+def load_named(dname, pname=None, model=None, parameters=None, shift=False):
     """
     Generates or loads a named data set.
 
@@ -45,12 +45,12 @@ def load_named(dname, pname=None, model=None, parameters=None):
     except KeyError:
         raise ValueError(f'Unknown data set {dname}')
     if 'NaIV' in pname:
-        return load_naiv(f'{DIR_DATA}/{cname}/{pname}')
+        return load_naiv(f'{DIR_DATA}/{cname}/{pname}', shift=shift)
     else:
         raise ValueError(f'Unknown protocol {pname}')
 
 
-def load_naiv(path):
+def load_naiv(path, leakcorrect=False, shift=False):
     """
     Loads an "Alex" file: CSV with current (nA).
 
@@ -72,6 +72,17 @@ def load_naiv(path):
         voltage[v] = vt
         data[v] = np.loadtxt(f'{path}/step_{v}.csv', delimiter=',')
         data[v] *= 1e3  # nA -> pA
+        if leakcorrect:
+            # Use the first 5ms holding at -100mV to leak correct the data.
+            # Assuming E_leak = 0 mV.
+            I_5ms = np.mean(data[v][:int(5. / dt)])
+            g_leak_est = I_5ms / v_hold
+            E_leak_est = 0  # assumption only
+            data[v] -= g_leak_est * (voltage[v] - E_leak_est)
+        if shift:
+            # Use the first 5ms holding at -100mV to shift the data to 0pA.
+            I_5ms = np.mean(data[v][:int(5. / dt)])
+            data[v] -= I_5ms
     return times, voltage, data
 
 
