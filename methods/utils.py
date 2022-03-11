@@ -414,9 +414,9 @@ def show_summary(parameters, info):
     print('Total results found: ' + str(len(parameters)))
     if len(parameters) > 0:
         print('Best score : ' + str(info[0, 1]))
-        print('Worst score: ' + str(info[-1, 1]))
-        print('Mean: ' + str(np.mean(info[:, 1])))
-        print('Std : ' + str(np.std(info[:, 1])))
+        print('Worst score: ' + str(info[:, 1][np.isfinite(info[:, 1])][-1]))
+        print('Mean: ' + str(np.mean(info[:, 1][np.isfinite(info[:, 1])])))
+        print('Std : ' + str(np.std(info[:, 1][np.isfinite(info[:, 1])])))
 
 
 def cmd(title):
