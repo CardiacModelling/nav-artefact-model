@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from methods import models
 from methods import protocols
 
+# Loop through different alphas to see the effects.
 x = models.VCModel(models.mmt('hh'), False, False, models.VC_MIN)
 y = models.VCModel(models.mmt('hh'), False, False, models.VC_IDEAL)
 p = [
@@ -34,16 +35,49 @@ x.set_artefact_parameters({
 
 fig, axes = plt.subplots(2, 1, sharex=True)
 
-axes[0].plot(y.times(), y.voltage([.1] * x.n_parameters()))
+axes[0].plot(y.times(), y.voltage([.1] * y.n_parameters()))
 axes[1].plot(y.times(), y.simulate([.1] * y.n_parameters()), label='ideal')
 
+alphas = []
 for i in range(1, 9):
     x.set_artefact_parameters({
         'voltage_clamp.alpha_R': i / 10.,
         'voltage_clamp.alpha_P': i / 10.,
     })
+    alphas.append((i / 10., i / 10.))
     axes[0].plot(x.times(), x.voltage([.1] * x.n_parameters()))
     axes[1].plot(x.times(), x.simulate([.1] * x.n_parameters()), label=f'alpha={i/10.}')
+axes[1].set_xlim([9.5, 12.5])
+axes[1].legend()
+plt.show()
+
+
+# Try out inputting alphas as part of VCModel constructor.
+z = models.VCModel(models.mmt('hh'), False, False, models.VC_MIN, alphas=alphas)
+z.set_protocol(protocols.from_steps(p), dt=0.01)
+
+z.set_artefact_parameters({
+    'cell.Cm': 10.,
+    'voltage_clamp.R_series': 6e-3,
+    #'voltage_clamp.C_prs': 0,
+    'voltage_clamp.V_offset_eff': 0,
+    'voltage_clamp.Cm_est': 10.,
+    'voltage_clamp.R_series_est': 6e-3,
+    #'voltage_clamp.C_prs_est': 0,
+    #'voltage_clamp.alpha_R': 0.7,
+    #'voltage_clamp.alpha_P': 0.7,
+    'voltage_clamp.g_leak': 0.5,
+    'voltage_clamp.g_leak_est': 0.4,
+})
+
+fig, axes = plt.subplots(2, 1, sharex=True)
+
+axes[0].plot(y.times(), y.voltage([.1] * y.n_parameters()))
+axes[1].plot(y.times(), y.simulate([.1] * y.n_parameters()), label='ideal')
+
+out = z.simulate([.1] * z.n_parameters())
+for i in range(z.n_outputs()):
+    axes[1].plot(z.times(), out[:, i], label=f'alpha={(i+1)/10.}')
 axes[1].set_xlim([9.5, 12.5])
 axes[1].legend()
 plt.show()
