@@ -449,6 +449,10 @@ class VCModel(pints.ForwardModel):
         """
         return list(self._currents), self._i_observed
 
+    def n_kinetics_parameters(self):
+        """ Returns the number of kinetics parameters. """
+        return len(self._kinetics)
+
     def n_parameters(self):
         """ PINTS n_parameters. """
         return len(self._parameters)

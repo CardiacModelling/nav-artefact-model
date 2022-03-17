@@ -104,6 +104,17 @@ def get_naiv_alphas(path):
     return alpha_r, alpha_p
 
 
+def get_naiv_base(path):
+    if 'NaIVCP' in path:
+        return 'NaIVCP'
+    elif ('NaIVC' in path) and not ('NaIVCP' in path):
+        return 'NaIVC'
+    elif ('NaIVP' in path) and not ('NaIVCP' in path):
+        return 'NaIVP'
+    else:
+        raise ValueError('Unknown alpha for {path}')
+
+
 def fake_data(model, parameters, sigma, seed=None):
     """
     Generates fake "Alex" style data, by running simulations with the given

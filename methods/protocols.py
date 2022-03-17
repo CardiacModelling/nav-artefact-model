@@ -4,6 +4,8 @@
 import myokit
 import numpy as np
 
+from . import data
+
 
 def load(filename):
     """
@@ -94,3 +96,18 @@ def mask(times, fold, discard=0, discard_start=False):
         ti = tj + discard
         tj = ti + fold
     return m
+
+
+def naiv_iv(times, data_folded, is_data=False):
+    """
+    Return (current, voltage) for the I-V relationship of protocol NaIV.
+    """
+    vs = data._naiv_steps
+    wins = [10.2, 14]
+    m = ((times > wins[0]) & (times < wins[1]))
+    current = []
+    for i, v in enumerate(vs):
+        k = v if is_data else i
+        c = np.argmax(np.abs(data_folded[k][m]))
+        current.append(data_folded[k][m][c])
+    return current, vs

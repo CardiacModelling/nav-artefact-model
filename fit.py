@@ -13,6 +13,7 @@ from methods import results, run, t_hold, v_hold
 
 # Get model name, vc level, protocol name, data name, and experiment name
 mname, level, pnames, dname, ename = utils.cmd('Perform a fit')
+GUESS = True
 
 # Show user what's happening
 print('=' * 79)
@@ -70,6 +71,19 @@ tr = np.arange(0, dt * len(cr), dt)
 # Set voltage clamp setting
 data.setup_model_vc(dname, model)
 
+# Initial guess of the parameters
+if GUESS:
+    guess, _ = utils.load(os.path.join(
+        results,
+        f'results-test-{mname}-vc1-{dname}-NaIVCP80',
+        'result.txt'), n_parameters=model.n_kinetics_parameters()+1)
+    guess = np.append(guess[0], np.ones(model.n_parameters() - len(guess[0])))
+    #guess[guess < 2e-3] *= 5.
+    #guess[guess > 9e2] /= 1.5
+    print('Initial guess:', guess)
+else:
+    guess = None
+
 # Create boundaries
 class LogRectBounds(pints.RectangularBoundaries):
     """
@@ -83,7 +97,7 @@ class LogRectBounds(pints.RectangularBoundaries):
         return 2**xs
 
 
-b = 1000
+b = 100000
 boundaries = LogRectBounds(
     np.ones(n_parameters) / b, np.ones(n_parameters) * b)
 
@@ -95,11 +109,12 @@ else:
 error = pints.MeanSquaredError(problem)
 
 # Create transformation for scaling factor parameters
-transformation = pints.LogTransformation(model.n_parameters())
+# transformation = pints.LogTransformation(model.n_parameters())
+transformation = pints.RectangularBoundariesTransformation(boundaries)
 
 # Try fitting
 path = os.path.join(results, ename)
-utils.fit(path, error, boundaries, transformation, 10, 50)
+utils.fit(path, error, boundaries, transformation, 10, 50, guess=guess)
 
 # Show current best results
 parameters, info = utils.load(

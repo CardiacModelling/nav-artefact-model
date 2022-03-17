@@ -291,7 +291,8 @@ def count(template_path, n_parameters, parse=True):
     return n
 
 
-def fit(name, error, boundaries, transformation=None, repeats=1, cap=None):
+def fit(name, error, boundaries, transformation=None, repeats=1, cap=None,
+        guess=None):
     """
     Minimises the given ``error``, and stores the results in the directory
     ``name``.
@@ -319,6 +320,8 @@ def fit(name, error, boundaries, transformation=None, repeats=1, cap=None):
     cap
         The maximum number of results to obtain in the given directory (default
         is ``None``, for unlimited).
+    Guess
+        Parameter of which to be set as initial parameters of the fits.
 
     """
     debug = False
@@ -374,8 +377,12 @@ def fit(name, error, boundaries, transformation=None, repeats=1, cap=None):
             # Allow resampling, in case error calculation fails
             print('Choosing starting point')
             p0 = s0 = float('inf')
-            while not np.isfinite(s0):
-                p0 = boundaries.sample(1)[0]
+            if guess is None:
+                while not np.isfinite(s0):
+                    p0 = boundaries.sample(1)[0]
+                    s0 = error(p0)
+            else:
+                p0 = guess
                 s0 = error(p0)
             print('p0:', p0)
             print('s0:', s0)
@@ -388,6 +395,7 @@ def fit(name, error, boundaries, transformation=None, repeats=1, cap=None):
             opt = pints.OptimisationController(
                 error,
                 p0,
+                sigma0=None if guess is None or transformation is None else 1.,
                 boundaries=boundaries,
                 transformation=transformation,
                 method=pints.CMAES,
