@@ -23,6 +23,7 @@ _model_dir = os.path.join(DIR_METHOD, '..', 'models')
 _model_files = {
     'kernik': 'kernik-2019-ina.mmt',
     'hh': 'hh-ina.mmt',
+    'hh3': 'hh-mhj-ina.mmt',
 }
 
 # Voltage clamp models

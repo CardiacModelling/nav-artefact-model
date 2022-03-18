@@ -379,7 +379,9 @@ def fit(name, error, boundaries, transformation=None, repeats=1, cap=None,
             p0 = s0 = float('inf')
             if guess is None:
                 while not np.isfinite(s0):
-                    p0 = boundaries.sample(1)[0]
+                    # p0 = boundaries.sample(1)[0]
+                    p0 = 1.
+                    p0 += np.random.normal(0, 0.2, boundaries.n_parameters())
                     s0 = error(p0)
             else:
                 p0 = guess
@@ -395,7 +397,8 @@ def fit(name, error, boundaries, transformation=None, repeats=1, cap=None,
             opt = pints.OptimisationController(
                 error,
                 p0,
-                sigma0=None if guess is None or transformation is None else 1.,
+                #sigma0=None if guess is None or transformation is None else 1.,
+                sigma0=None if transformation is None else 1.,
                 boundaries=boundaries,
                 transformation=transformation,
                 method=pints.CMAES,
@@ -437,7 +440,7 @@ def cmd(title):
     parser.add_argument(
         '-m', '--model',
         nargs='?',
-        choices=['hh', 'kernik'],
+        choices=models._model_files.keys(),
         default='hh',
         help='The model to use')
     parser.add_argument(

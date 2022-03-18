@@ -101,6 +101,8 @@ def get_naiv_alphas(path):
         alpha_p = alpha / 100.
     else:
         raise ValueError('Unknown alpha for {path}')
+    assert(alpha_r < 1. and alpha_r >= 0.)
+    assert(alpha_p < 1. and alpha_p >= 0.)
     return alpha_r, alpha_p
 
 
