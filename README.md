@@ -17,3 +17,6 @@ This is a repository to share code for the NaV artefact modelling project with C
 - `methods`: Main python codes.
 - `models`: Myokit models.
 - `data`: Experimental data.
+
+### Data source
+<https://app.box.com/folder/156288669561>
