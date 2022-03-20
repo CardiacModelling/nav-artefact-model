@@ -4,7 +4,7 @@
 import myokit
 import numpy as np
 
-from . import data
+from . import data2 as data
 
 
 def load(filename):
@@ -109,5 +109,5 @@ def naiv_iv(times, data_folded, is_data=False):
     for i, v in enumerate(vs):
         k = v if is_data else i
         c = np.argmax(np.abs(data_folded[k][m]))
-        current.append(data_folded[k][m][c])
+        current.append(np.array(data_folded[k][m])[c])
     return current, vs

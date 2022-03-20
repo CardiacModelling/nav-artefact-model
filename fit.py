@@ -8,12 +8,14 @@ import os
 import numpy as np
 import pints
 
-from methods import data, utils, models, protocols
+#from methods import data as data
+from methods import data2 as data
+from methods import utils, models, protocols
 from methods import results, run, t_hold, v_hold
 
 # Get model name, vc level, protocol name, data name, and experiment name
 mname, level, pnames, dname, ename = utils.cmd('Perform a fit')
-GUESS = True
+GUESS = not True
 
 # Show user what's happening
 print('=' * 79)
@@ -28,9 +30,10 @@ print('=' * 79)
 # Load protocol
 dt = 0.04  # ms; NOTE: This has to match the data
 step_duration = 40  # ms
-discard = 2000  # ms
+discard = 0 # 2000  # ms
 v_steps = data._naiv_steps
-protocol = protocols.load('protocols/ina-steps.txt')
+#protocol = protocols.load('protocols/ina-steps.txt')
+protocol = protocols.load('protocols/ina-steps-2-no-holding.txt')
 
 # Load alpha values
 alphas = []
@@ -38,6 +41,19 @@ for pname in pnames:
     alphas.append(
         data.get_naiv_alphas(pname)
     )
+
+# Load temperature values
+temperatures = []
+for pname in pnames:
+    try:
+        temperatures.append(
+            data.get_naiv_temperature(pname)
+        )
+    except AttributeError:
+        temperatures.append(None)
+if not (temperatures.count(temperatures[0]) == len(temperatures)):
+    raise ValueError('Expect all protocols have the same temperature.')
+temperature = temperatures[0]
 
 # Create simple VC model
 print('Initialising model...')
@@ -48,6 +64,7 @@ model = models.VCModel(
     vc_level=level,
     alphas=alphas if level != models.VC_IDEAL else None,
     E_leak=True,
+    temperature=temperature,
 )
 model.set_protocol(protocol, dt=dt, v_hold=v_hold, t_hold=t_hold)
 mask = protocols.mask(model.times(), step_duration, discard=discard)
@@ -75,7 +92,8 @@ data.setup_model_vc(dname, model)
 if GUESS:
     guess, _ = utils.load(os.path.join(
         results,
-        f'results-test-{mname}-vc1-{dname}-NaIVCP80',
+        #f'results-test-{mname}-vc1-{dname}-NaIVCP80',
+        f'results-test-{mname}-vc1-{dname}-NaIV_35C_80CP',
         'result.txt'), n_parameters=model.n_kinetics_parameters()+1)
     guess = np.append(guess[0], np.ones(model.n_parameters() - len(guess[0])))
     print('Initial guess:', guess)
@@ -90,7 +108,7 @@ class LogRectBounds(pints.RectangularBoundaries):
     def sample(self, n=1):
         """ See :meth:`pints.Boundaries.sample()`. """
         xs = 1.
-        xs += np.random.normal(0, 0.2, size=(n, self._n_parameters))
+        xs += np.random.normal(0, 0.1, size=(n, self._n_parameters))
         return xs
 
 b = 1e5

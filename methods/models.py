@@ -366,6 +366,7 @@ class VCModel(pints.ForwardModel):
     """
     def __init__(self, model_file, fit_kinetics=False, fit_artefacts=False,
                  vc_level=VC_IDEAL, alphas=None, E_leak=None,
+                 temperature=None,
                  max_evaluation_time=10):
         if vc_level == VC_NONE:
             raise ValueError('Unclamped vc-level selected.')
@@ -380,6 +381,8 @@ class VCModel(pints.ForwardModel):
 
         # Load model and apply voltage clamp
         self._model = myokit.load_model(model_file)
+        if temperature is not None:
+            self._model.set_value('phys.T', float(temperature))
         prep = prepare(self._model, vc_level, self._E_leak is not None)
         self._i_observed = prep[0]      # Total current variable
         self._currents = prep[1]        # Fitted current variables
@@ -527,6 +530,7 @@ class VCModel(pints.ForwardModel):
                 x = 1
                 #y = np.log(y)
                 #print(y)
+            #print(v, x, y)
             self._simulation1.set_constant(v, x * y)
             self._simulation2.set_constant(v, x * y)
 

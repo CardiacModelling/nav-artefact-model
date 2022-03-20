@@ -9,13 +9,12 @@ from . import DIR_METHOD, models
 _cnames = {# ID, file_name
     'cell1':'220128_006_ch2_csv',
     'cell2':'220210_003_ch3_csv',
+    'cell3':'220314_001_ch1_csv',
 }
 
-_pnames = [f'NaIVCP{i}' for i in np.arange(0, 90, 10)] \
-        + [f'NaIVC{i}' for i in np.arange(0, 90, 10)] \
-        + [f'NaIVP{i}' for i in np.arange(0, 90, 10)]
+_pnames = [f'NaIV_{j}C_{i}CP' for i in np.arange(0, 90, 20) for j in [25, 35]]
 
-_naiv_steps = [-80, -70, -60, -50, -40, -30, -20, -10, 0, 10, 20, 30, 40]  # mV
+_naiv_steps = np.arange(-80, 40, 5)  # mV
 
 DIR_DATA = f'{DIR_METHOD}/../data'
 
@@ -61,11 +60,13 @@ def load_named(dname, pname=None, model=None, parameters=None, shift=False):
 
 def load_naiv(path, leakcorrect=False, shift=False):
     """
-    Loads an "Alex" file: CSV with current (nA).
+    Loads an "Alex" file: CSV with each column (voltage header) for
+    current (nA).
 
     Returns a tuple ``(t, v, c)`` where ``t`` is time in ms, ``v`` is voltage
     in mV, and ``c`` is current in pA.
     """
+    import pandas as pd
     v_steps = list(_naiv_steps)
     v_hold = -100.  # mV
     t_hold = 10.    # ms
@@ -74,12 +75,13 @@ def load_naiv(path, leakcorrect=False, shift=False):
     times = np.arange(0, t_hold + t_step + t_hold, dt)
     voltage = dict()
     data = dict()
+    df = pd.read_csv(f'{path}.csv', header=0)
     for v in v_steps:
         vt = v_hold * np.ones(int(t_hold / dt))
         vt = np.append(vt, float(v) * np.ones(int(t_step / dt)))
         vt = np.append(vt, float(v_hold) * np.ones(int(t_hold / dt)))
         voltage[v] = vt
-        data[v] = np.loadtxt(f'{path}/step_{v}.csv', delimiter=',')
+        data[v] = df['{:.1f}'.format(v)]
         data[v] *= 1e3  # nA -> pA
         if leakcorrect:
             # Use the first 5ms holding at -100mV to leak correct the data.
@@ -92,22 +94,16 @@ def load_naiv(path, leakcorrect=False, shift=False):
             # Use the first 5ms holding at -100mV to shift the data to 0pA.
             I_5ms = np.mean(data[v][:int(5. / dt)])
             data[v] -= I_5ms
+    del(df)
     return times, voltage, data
 
 
 def get_naiv_alphas(path):
+    """ Return (alpha_R, alpha_P). """
     import re
-    if 'NaIVCP' in path:
-        alpha = np.float(re.findall('NaIVCP(\d*)', path)[0])
+    if 'NaIV_' in path:
+        alpha = float(re.findall('NaIV_\d\dC_(\d*)CP', path)[0])
         alpha_r = alpha_p = alpha / 100.
-    elif ('NaIVC' in path) and not ('NaIVCP' in path):
-        alpha = np.float(re.findall('NaIVC(\d*)', path)[0])
-        alpha_r = alpha / 100.
-        alpha_p = 0
-    elif ('NaIVP' in path) and not ('NaIVCP' in path):
-        alpha = np.float(re.findall('NaIVC(\d*)', path)[0])
-        alpha_r = 0
-        alpha_p = alpha / 100.
     else:
         raise ValueError('Unknown alpha for {path}')
     assert(alpha_r < 1. and alpha_r >= 0.)
@@ -115,15 +111,15 @@ def get_naiv_alphas(path):
     return alpha_r, alpha_p
 
 
-def get_naiv_base(path):
-    if 'NaIVCP' in path:
-        return 'NaIVCP'
-    elif ('NaIVC' in path) and not ('NaIVCP' in path):
-        return 'NaIVC'
-    elif ('NaIVP' in path) and not ('NaIVCP' in path):
-        return 'NaIVP'
+def get_naiv_temperature(path):
+    """ Return temperature in K. """
+    import re
+    if 'NaIV_' in path:
+        temperature = int(re.findall('NaIV_(\d*)C_.*CP', path)[0])
     else:
-        raise ValueError('Unknown alpha for {path}')
+        raise ValueError('Unknown temperature for {path}')
+    assert(temperature in [25, 35])
+    return 273.15 + float(temperature)
 
 
 def fake_data(model, parameters, sigma, seed=None):
@@ -153,6 +149,7 @@ def load_info(cname):
     """
     Return (cm, rs) of the data `cell` in pF and GOhm.
     """
+    # TODO: Use meta data for Cm and Rs?
     import pandas as pd
     info_file = 'info.csv'
     info = pd.read_csv(f'{DIR_DATA}/{info_file}', index_col=0, header=[0])
@@ -167,11 +164,11 @@ def setup_model_vc(dname, model):
     is_full = model.vc_level() == models.VC_FULL
     is_min = model.vc_level() == models.VC_MIN
     if is_full or is_min:
-        if 'syn' not in dname:
+        if 'syn' in dname:
+            raise NotImplementedError
+        else:
             cm, rs = load_info(dname)
             g_leak = 1. # 1 GOhm seal; TODO Update this by experimental data.
-        else:
-            raise NotImplementedError
         model.set_artefact_parameters({
             'voltage_clamp.Cm_est':cm,
             'voltage_clamp.R_series_est':rs,

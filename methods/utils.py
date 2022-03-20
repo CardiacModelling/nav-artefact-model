@@ -10,7 +10,8 @@ import numpy as np
 
 import pints
 
-from . import data, models
+from . import models
+from . import data2 as data
 
 
 class reserve_base_name(object):
@@ -381,6 +382,7 @@ def fit(name, error, boundaries, transformation=None, repeats=1, cap=None,
                 while not np.isfinite(s0):
                     p0 = boundaries.sample(1)[0]
                     s0 = error(p0)
+                    #print(p0, s0)
             else:
                 p0 = guess
                 s0 = error(p0)
@@ -403,6 +405,7 @@ def fit(name, error, boundaries, transformation=None, repeats=1, cap=None,
             )
             opt.set_log_to_file(log_path, csv=True)
             opt.set_max_iterations(3 if debug else None)
+            opt.set_max_unchanged_iterations(iterations=200, threshold=1e-5)
             opt.set_parallel(True)
 
             # Run optimisation
@@ -444,10 +447,7 @@ def cmd(title):
     parser.add_argument(
         '-p', '--protocol',
         nargs='+',
-        choices=[f'NaIVCP{i}' for i in np.arange(0, 90, 10)] \
-                + [f'NaIVC{i}' for i in np.arange(0, 90, 10)] \
-                + [f'NaIVP{i}' for i in np.arange(0, 90, 10)],
-        default=['NaIVCP80'],
+        choices=data.protocol_sets(),
         help='The protocol to use')
     parser.add_argument(
         '-d', '--data',
