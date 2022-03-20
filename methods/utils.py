@@ -379,9 +379,7 @@ def fit(name, error, boundaries, transformation=None, repeats=1, cap=None,
             p0 = s0 = float('inf')
             if guess is None:
                 while not np.isfinite(s0):
-                    # p0 = boundaries.sample(1)[0]
-                    p0 = 1.
-                    p0 += np.random.normal(0, 0.2, boundaries.n_parameters())
+                    p0 = boundaries.sample(1)[0]
                     s0 = error(p0)
             else:
                 p0 = guess

@@ -523,8 +523,9 @@ class VCModel(pints.ForwardModel):
         # Set model parameters (as original_value * scaling)
         for v, x, y in zip(self._parameters, self._original, parameters):
             if str(v) == 'voltage_clamp.V_offset_eff':  # TODO Maybe less hacky
+                # NOTE: Assume this is goes from negative to positive!
                 x = 1
-                y = np.log(y)
+                #y = np.log(y)
                 #print(y)
             self._simulation1.set_constant(v, x * y)
             self._simulation2.set_constant(v, x * y)

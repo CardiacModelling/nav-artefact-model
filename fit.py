@@ -78,28 +78,49 @@ if GUESS:
         f'results-test-{mname}-vc1-{dname}-NaIVCP80',
         'result.txt'), n_parameters=model.n_kinetics_parameters()+1)
     guess = np.append(guess[0], np.ones(model.n_parameters() - len(guess[0])))
-    #guess[guess < 2e-3] *= 5.
-    #guess[guess > 9e2] /= 1.5
     print('Initial guess:', guess)
 else:
     guess = None
 
-# Create boundaries
+# Create boundaries and transformation
 class LogRectBounds(pints.RectangularBoundaries):
     """
-    Rect boundaries, but samples in 2-log space.
+    Rect boundaries, but samples around 1.
     """
     def sample(self, n=1):
         """ See :meth:`pints.Boundaries.sample()`. """
-        lo = np.log2(self._lower)
-        hi = np.log2(self._upper)
-        xs = np.random.uniform(lo, hi, size=(n, self._n_parameters))
-        return 2**xs
+        xs = 1.
+        xs += np.random.normal(0, 0.2, size=(n, self._n_parameters))
+        return xs
 
+b = 1e5
+def setup_bound_and_transform(model, b):
+    """
+    Setup and return boundaries and transformation.
+    """
+    # Check if we have voltage offset in the parameters
+    p = model.fit_parameter_names()
+    n_parameters = model.n_parameters()
+    assert(len(p) == n_parameters)
+    if 'voltage_clamp.V_offset_eff' in p:
+        i = p.index('voltage_clamp.V_offset_eff')
+        print(f'Parameter {i} is voltage offset, with no transformation.')
+        l = np.ones(i) / b
+        l = np.append(l, -30)
+        l = np.append(l, np.ones(n_parameters - i - 1) / b)
+        u = np.ones(i) * b
+        u = np.append(u, 30)
+        u = np.append(u, np.ones(n_parameters - i - 1) * b)
+    else:
+        l = np.ones(n_parameters) / b
+        u = np.ones(n_parameters) * b
+    # Create boundaries
+    boundaries = LogRectBounds(l, u)
+    # Create transformation for bounded parameters
+    transformation = pints.RectangularBoundariesTransformation(boundaries)
+    return boundaries, transformation
 
-b = 100000
-boundaries = LogRectBounds(
-    np.ones(n_parameters) / b, np.ones(n_parameters) * b)
+boundaries, transformation = setup_bound_and_transform(model, b)
 
 # Create score function
 if len(pnames) > 1:
@@ -108,9 +129,6 @@ else:
     problem = pints.SingleOutputProblem(model, tr, cr)
 error = pints.MeanSquaredError(problem)
 
-# Create transformation for scaling factor parameters
-# transformation = pints.LogTransformation(model.n_parameters())
-transformation = pints.RectangularBoundariesTransformation(boundaries)
 
 # Try fitting
 path = os.path.join(results, ename)
