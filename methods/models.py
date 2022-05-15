@@ -22,8 +22,10 @@ from . import t_hold, v_hold
 _model_dir = os.path.join(DIR_METHOD, '..', 'models')
 _model_files = {
     'kernik': 'kernik-2019-ina.mmt',
+    'iyer': 'iyer-2007-ina.mmt',
     'hh': 'hh-ina.mmt',
     'hh3': 'hh-mhj-ina.mmt',
+    'hhh': 'hhh-ina.mmt',
 }
 
 # Voltage clamp models
