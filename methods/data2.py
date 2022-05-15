@@ -10,6 +10,8 @@ _cnames = {# ID, file_name
     'cell1':'220128_006_ch2_csv',
     'cell2':'220210_003_ch3_csv',
     'cell3':'220314_001_ch1_csv',
+    'cell4':'220314_003_ch2_csv',
+    'cell5':'220314_004_ch2_csv',
 }
 
 _pnames = [f'NaIV_{j}C_{i}CP' for i in np.arange(0, 90, 20) for j in [25, 35]]
