@@ -1,0 +1,186 @@
+[[model]]
+name: hh-ina
+display_name: Hodgkin-Huxley INa
+version: 20220309
+mmt_authors: Chon Lok Lei
+desc: """
+    Myokit implementation of the fast sodium current in Hodgkin-Huxley style.
+
+    Units:
+    time in [ms]
+    voltage in [mV]
+    current in [pA]
+    capacitance in [pF]
+    resistance in [GOhm]
+"""
+# Initial conditions
+membrane.V = -100
+ina.m      =  0.01
+ina.h      =  0.8
+
+[engine]
+time = 0 [ms]
+    in [ms]
+    bind time
+pace = 0
+    bind pace
+
+[membrane]
+i_ion = (
+    + ina.i_Na
+    )
+    in [pA]
+    label cellular_current
+dot(V) = (engine.pace * 1 [mV] - V) / 1e-6 [ms]
+    desc: Ideal-voltage-clamp membrane voltage (to be replaced)
+    label membrane_potential
+    in [mV]
+
+#
+# Sodium Current (INa)
+# Parameters from: https://doi.org/10.1371/journal.pcbi.1009145
+#
+[ina]
+use membrane.V
+g_Na = 600 [pA/mV]
+    in [nS]
+    label g_Na
+m1 = 45.43 [1/ms]
+#m1 = 8.743 [1/ms]
+    in [1/ms]
+    label k_Na_1
+m2 = 13.78 [mV]
+    in [mV]
+    label k_Na_2
+m3 = 0.6628 [1/ms]
+#m3 = 0.1276 [1/ms]
+    in [1/ms]
+    label k_Na_3
+m4 = -23.25 [mV]
+    in [mV]
+    label k_Na_4
+h1 = 6.169e-5 [1/ms]
+#h1 = 1.187e-5 [1/ms]
+    in [1/ms]
+    label k_Na_5
+h2 = -9.328 [mV]
+    in [mV]
+    label k_Na_6
+h3 = 14.15 [1/ms]
+#h3 = 2.723 [1/ms]
+    in [1/ms]
+    label k_Na_7
+h4 = 14.91 [mV]
+    in [mV]
+    label k_Na_8
+p1 = 0
+    label k_Na_9
+p2 = 0
+    label k_Na_10
+p3 = 0
+    label k_Na_11
+p4 = 0
+    label k_Na_12
+p5 = 0
+    label k_Na_13
+p6 = 0
+    label k_Na_14
+p7 = 0
+    label k_Na_15
+p8 = 0
+    label k_Na_16
+n_param = 16
+    label k_Na_n
+dot(m) = (inf - m) / tau
+    desc: activation in i_Na
+    a = exp(log(m1) + V / m2 + p1 * V^2 / 1000 + p2 * V^3 / 30000)
+        in [1/ms]
+    b = exp(log(m3) + V / m4 + p3 * V^2 / 1000 + p4 * V^3 / 30000)
+        in [1/ms]
+    inf = a / (a + b)
+    tau = 1 / (a + b)
+        in [ms]
+dot(h) = (inf - h) / tau
+    desc: inactivation in i_Na
+    a = exp(log(h1) + V / h2 + p5 * V^2 / 1000 + p6 * V^3 / 30000)
+        in [1/ms]
+    b = exp(log(h3) + V / h4 + p7 * V^2 / 1000 + p8 * V^3 / 30000)
+        in [1/ms]
+    inf = a / (a + b)
+    tau = 1 / (a + b)
+        in [ms]
+i_Na = g_Na * m^3 * h * (V - erev.E_Na)
+    in [pA]
+    label I_Na
+
+#
+# Cell size
+#
+[cell]
+Cm = 60 [pF]
+    in [pF]
+    label membrane_capacitance
+
+#
+# Physical constants
+#
+[phys]
+T = 310 [K]
+#T = 295 [K]
+    in [K]
+R = 8.314472 [J / mol / K]
+    in [J / mol / K]
+F = 96.4853415 [C / mmol]
+    in [C / mmol]
+RTF = R * T / F
+    in [mV]
+
+#
+# Cai (millimolar)
+#
+[cai]
+Cai = 1e-5 [mM]
+    in [mM]
+    label Ca_i
+
+#
+# Nai (millimolar) (in sodium_dynamics)
+#
+[nai]
+Nai = 10 [mM]
+    in [mM]
+    label Na_i
+
+#
+# Ki (millimolar) (in potatssium_dynamics)
+#
+[ki]
+Ki = 110 [mM]
+    in [mM]
+    label K_i
+
+#
+# External concentrations
+#
+[extra]
+Ko = 5.4 [mM]
+    in [mM]
+    label K_o
+Cao = 1.8 [mM]
+    in [mM]
+    label Ca_o
+Nao = 140 [mM]
+    in [mM]
+    label Na_o
+
+#
+# Reversal potentials
+#
+[erev]
+use phys.RTF
+E_Ca = 0.5 * RTF * log(extra.Cao / cai.Cai)
+    in [mV]
+E_Na = RTF * log(extra.Nao / nai.Nai)
+    in [mV]
+E_K = RTF * log(extra.Ko / ki.Ki)
+    in [mV]

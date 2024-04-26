@@ -1,0 +1,197 @@
+[[model]]
+name: balbi-2017
+display_name: Balbi et al. 2017 INa
+version: 20220309
+mmt_authors: Chon Lok Lei
+desc: """
+    Myokit implementation of the fast sodium current in Balbi et al. 2017.
+    https://doi.org/10.1371/journal.pcbi.1005737.
+
+    Units:
+    time in [ms]
+    voltage in [mV]
+    current in [pA]
+    capacitance in [pF]
+    resistance in [GOhm]
+"""
+# Initial values
+membrane.V = -100
+ina.c1 = 1
+ina.c2 = 0
+ina.o1 = 0
+ina.o2 = 0
+ina.i1 = 0
+ina.i2 = 0
+
+[engine]
+time = 0 [ms]
+    in [ms]
+    bind time
+pace = 0
+    bind pace
+
+[membrane]
+i_ion = (
+    + ina.i_Na
+    )
+    in [pA]
+    label cellular_current
+dot(V) = (engine.pace * 1 [mV] - V) / 1e-6 [ms]
+    desc: Ideal-voltage-clamp membrane voltage (to be replaced)
+    label membrane_potential
+    in [mV]
+
+###############################################################################
+###############################################################################
+###############################################################################
+#
+# INa from Balbi et al. 2017
+#
+[ina]
+use membrane.V
+g = 2000 [uS]
+    label g_Na
+i_Na = g * (o1 + o2) * (V - erev.E_Na)
+    label I_Na
+dot(c1) = i1c1 * i1 + c2c1 * c2 - (c1c2 + c1i1) * c1
+dot(c2) = c1c2 * c1 + o1c2 * o1 + o2c2 * o2 - (c2c1 + c2o1 + c2o2) * c2
+dot(o1) = c2o1 * c2 + i1o1 * i1 - (o1c2 + o1i1) * o1
+dot(o2) = c2o2 * c2 - o2c2 * o2
+dot(i1) = i2i1 * i2 + c1i1 * c1 + o1i1 * o1 - (i1c1 + i1i2 + i1o1) * i1
+dot(i2) = i1i2 * i1 - i2i1 * i2
+c1c2 = bd1 / (1 + exp((V - vd1) / kd1))
+c2c1 = bh2 / (1 + exp((V - vh2) / kh2)) + bd2 / (1 + exp((V - vd2) / kd2))
+c2o1 = bd3 / (1 + exp((V - vd3) / kd3))
+o1c2 = bh4 / (1 + exp((V - vh4) / kh4)) + bd4 / (1 + exp((V - vd4) / kd4))
+c2o2 = bd5 / (1 + exp((V - vd5) / kd5))
+o2c2 = bh6 / (1 + exp((V - vh6) / kh6)) + bd6 / (1 + exp((V - vd6) / kd6))
+o1i1 = bh7 / (1 + exp((V - vh7) / kh7)) + bd7 / (1 + exp((V - vd7) / kd7))
+i1o1 = bh8 / (1 + exp((V - vh8) / kh8))
+i1c1 = bh9 / (1 + exp((V - vh9) / kh9))
+c1i1 = bd10 / (1 + exp((V - vd10) / kd10))
+i1i2 = bd11 / (1 + exp((V - vd11) / kd11))
+i2i1 = bh12 / (1 + exp((V - vh12) / kh12))
+bd1 =  10    [1/ms]
+vd1 = -13    [mV]
+kd1 = -10    [1/mV]
+bh2 =   1    [1/ms]
+vh2 = -43    [mV]
+kh2 =   8    [1/mV]
+bd2 =  10    [1/ms]
+vd2 = -13    [mV]
+kd2 = -10    [1/mV]
+bd3 =  10    [1/ms]
+vd3 = -23    [mV]
+kd3 = -10    [1/mV]
+bh4 =   1    [1/ms]
+vh4 = -53    [mV]
+kh4 =   8    [1/mV]
+bd4 =  10    [1/ms]
+vd4 = -23    [mV]
+kd4 = -10    [1/mV]
+bd5 = 0.05   [1/ms]
+vd5 = -10    [mV]
+kd5 = -10    [1/mV]
+bh6 =   2    [1/ms]
+vh6 = -50    [mV]
+kh6 =  10    [1/mV]
+bd6 = 0.08   [1/ms]
+vd6 = -20    [mV]
+kd6 = -10    [1/mV]
+bh7 =   7    [1/ms]
+vh7 = -44    [mV]
+kh7 =  13    [1/mV]
+bd7 =  10    [1/ms]
+vd7 = -19    [mV]
+kd7 = -13    [1/mV]
+bh8 = 1e-5   [1/ms]
+vh8 = -20    [mV]
+kh8 =  10    [1/mV]
+bh9 = 0.19   [1/ms]
+vh9 = -110   [mV]
+kh9 =   7    [1/mV]
+bd10 = 0.016 [1/ms]
+vd10 = -92   [mV]
+kd10 =  -6   [1/mV]
+bd11 = 22e-5 [1/ms]
+vd11 = -50   [mV]
+kd11 =  -5   [1/mV]
+bh12 = 0.0018[1/ms]
+vh12 = -90   [mV]
+kh12 =  30   [1/mV]
+n_param = 0
+    label k_Na_n
+###############################################################################
+###############################################################################
+###############################################################################
+
+#
+# Cell size
+#
+[cell]
+Cm = 60 [pF]
+    in [pF]
+    label membrane_capacitance
+
+#
+# Physical constants
+#
+[phys]
+T = 310 [K]
+    in [K]
+R = 8.314472 [J / mol / K]
+    in [J / mol / K]
+F = 96.4853415 [C / mmol]
+    in [C / mmol]
+RTF = R * T / F
+    in [mV]
+
+#
+# Cai (millimolar)
+#
+[cai]
+Cai = 1e-5 [mM]
+    in [mM]
+    label Ca_i
+
+#
+# Nai (millimolar) (in sodium_dynamics)
+#
+[nai]
+Nai = 10 [mM]
+    in [mM]
+    label Na_i
+
+#
+# Ki (millimolar) (in potatssium_dynamics)
+#
+[ki]
+Ki = 110 [mM]
+    in [mM]
+    label K_i
+
+#
+# External concentrations
+#
+[extra]
+Ko = 5.4 [mM]
+    in [mM]
+    label K_o
+Cao = 1.8 [mM]
+    in [mM]
+    label Ca_o
+Nao = 140 [mM]
+    in [mM]
+    label Na_o
+
+#
+# Reversal potentials
+#
+[erev]
+use phys.RTF
+E_Ca = 0.5 * RTF * log(extra.Cao / cai.Cai)
+    in [mV]
+E_Na = RTF * log(extra.Nao / nai.Nai)
+    in [mV]
+E_K = RTF * log(extra.Ko / ki.Ki)
+    in [mV]

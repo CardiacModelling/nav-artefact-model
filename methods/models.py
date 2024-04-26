@@ -21,11 +21,15 @@ from . import t_hold, v_hold
 # Model files
 _model_dir = os.path.join(DIR_METHOD, '..', 'models')
 _model_files = {
+    'balbi': 'balbi-2017-ina.mmt',
+    'gray': 'gray-2020-ina.mmt',
     'kernik': 'kernik-2019-ina.mmt',
     'iyer': 'iyer-2007-ina.mmt',
     'hh': 'hh-ina.mmt',
     'hh3': 'hh-mhj-ina.mmt',
     'hhh': 'hhh-ina.mmt',
+    'hhh2': 'hhh2-ina.mmt',
+    'hh-fr': 'hh-flexible-rates-ina.mmt',
 }
 
 # Voltage clamp models
@@ -340,8 +344,8 @@ class VCModel(pints.ForwardModel):
     conditions.
 
     Simulation parameters (aka fitting parameters) are *scaling factors* to the
-    original parameter values; only `voltage_clamp.V_offset_eff` is set to the
-    natural logarithm of the input parameter value (as it is the only parameter
+    original parameter values; only `voltage_clamp.V_offset_eff` and `ina.p*`
+    are set to the actual input parameter value (as they are the parameters
     that can take negative values).
 
     Parameters
@@ -419,6 +423,12 @@ class VCModel(pints.ForwardModel):
 
         # Get original parameter values
         self._original = [var.eval() for var in self._parameters]
+        self._non_scaling_parameters = []
+        for i, v in enumerate(self._parameters):
+            if str(v) == 'voltage_clamp.V_offset_eff':
+                self._non_scaling_parameters.append(i)
+            elif 'ina.p' in str(v):
+                self._non_scaling_parameters.append(i)
 
         self._artefact_values = None
         # Not generating artefact parameters as we might fit them
@@ -439,6 +449,21 @@ class VCModel(pints.ForwardModel):
             self._simulation2.set_tolerance(1e-8, 1e-8)
         else:
             self._simulation2.set_tolerance(1e-8, 1e-8)
+
+        # Store model original state
+        self.original_state = self._simulation1.state()
+        self.use_init_state(False)
+        self.set_init_state(self.original_state)
+
+    def non_scaling_parameters(self):
+        # Return the indices of the non-scaling parameters
+        return self._non_scaling_parameters
+
+    def set_init_state(self, states):
+        self._init_state = states
+
+    def use_init_state(self, use=True):
+        self._use_init_state = use
 
     def code(self):
         """ Returns code representing the internal model, for debugging. """
@@ -521,20 +546,39 @@ class VCModel(pints.ForwardModel):
         if mask is not None:
             self._times = self._times[mask]
 
-    def _update_fit_parameters(self, parameters):
+    def _update_fit_parameters(self, parameters, variables=None,
+                               originals=None):
         """
         Internal method to update the fitting parameters.
         """
         # Set model parameters (as original_value * scaling)
-        for v, x, y in zip(self._parameters, self._original, parameters):
-            if str(v) == 'voltage_clamp.V_offset_eff':  # TODO Maybe less hacky
+        if variables is None:
+            variables = self._parameters
+        if originals is None:
+            originals = self._original
+        for i, (v, x, y) in enumerate(zip(variables, originals, parameters)):
+            if i in self._non_scaling_parameters:
                 # NOTE: Assume this is goes from negative to positive!
                 x = 1
-                #y = np.log(y)
-                #print(y)
+                #print(v, x, y)
             #print(v, x, y)
             self._simulation1.set_constant(v, x * y)
             self._simulation2.set_constant(v, x * y)
+
+    def _update_state(self):
+        # Update state
+        if self._use_init_state:
+            # Use a pre-set state
+            state_to_set = self._init_state
+        elif self._t_hold > 0:
+            self._simulation1.reset()
+            self._simulation1.set_state(self.original_state)
+            self._simulation1.run(self._t_hold, log=myokit.LOG_NONE)
+            state_to_set = self._simulation1.state()
+        else:
+            state_to_set = self.original_state
+        self._simulation2.reset()
+        self._simulation2.set_state(state_to_set)
 
     def simulate_full(self, parameters):
         """
@@ -546,12 +590,8 @@ class VCModel(pints.ForwardModel):
         # Set model parameters (as original_value * scaling)
         self._update_fit_parameters(parameters)
 
-        # Holding potential
-        self._simulation2.reset()
-        if self._t_hold > 0:
-            self._simulation1.reset()
-            self._simulation1.run(self._t_hold, log=myokit.LOG_NONE)
-            self._simulation2.set_state(self._simulation1.state())
+        # Update state
+        self._update_state()
 
         # Protocol
         return self._simulation2.run(
@@ -574,13 +614,10 @@ class VCModel(pints.ForwardModel):
         if extra is not None:
             log += extra
 
+        #if True:
         try:
-            # Holding potential
-            self._simulation2.reset()
-            if self._t_hold > 0:
-                self._simulation1.reset()
-                self._simulation1.run(self._t_hold, log=myokit.LOG_NONE)
-                self._simulation2.set_state(self._simulation1.state())
+            # Update state
+            self._update_state()
             # Protocol
             d = self._simulation2.run(
                 self._times[-1] + 0.02,
@@ -591,6 +628,8 @@ class VCModel(pints.ForwardModel):
 
             # Convert dict to 2d array
             return np.asarray([d[key] for key in log])
+        #try:
+        #    pass
         except (myokit.SimulationError, myokit.SimulationCancelledError):
             # Return array of NaNs
             return np.ones((len(log), len(self._times))) * float('inf')
@@ -791,6 +830,88 @@ def _generate_artefact_parameters_2(seed=None, level=VC_FULL):
     p = np.append(p, [i_s, est_i_s])
 
     return p
+
+
+class ConstantVoltageVCModel(VCModel):
+    """
+    A :class`pints.ForwardModel` representing a cell under voltage-clamp
+    conditions.
+
+    Simulation parameters (aka fitting parameters) are *scaling factors* to the
+    original parameter values; only `voltage_clamp.V_offset_eff` and `ina.p*`
+    are set to the actual input parameter value (as they are the parameters
+    that can take negative values).
+
+    Parameters
+    ----------
+    model_file
+        An ``mmt`` model file for an annotated cell model.
+    vc_level
+        Set to ``models.VC_IDEAL``, ``models.VC_MIN``, or ``models.VC_FULL``
+        to use ideal, simplified, or full artefact model.
+    alphas
+        Levels for Rs compensation and supercharging/voltage prediction:
+        [(alpha_r_1, alpha_p_1), (alpha_r_2, alpha_p_2)] as a list of tuple
+        inputs. The length of the list will determine the number of outputs
+        during simulation: (n_times, n_outputs); if None, n_outputs=1, and
+        alpha values can be set with `meth`:set_artefact_parameters().
+    E_leak
+        If using the full voltage-clamp model, this can be used to set an
+        estimated leak reversal potential (if not set, the voltage-clamp model
+        default will be used).
+    max_evaluation_time
+        The maximum time (in seconds, as a float) allowed for one call to
+        ``simulate()``. Simulations that take longer will be terminated.
+    rates
+        A list of transition rate parameter names for the model to be detached
+        and modelled separately.
+
+    """
+    def __init__(self, model_file, voltage,
+                 fit_kinetics=False, fit_artefacts=False,
+                 vc_level=VC_IDEAL, alphas=None, E_leak=None,
+                 temperature=None,
+                 max_evaluation_time=10,
+                 rates=[]):
+        VCModel.__init__(self, model_file, fit_kinetics, fit_artefacts,
+                         vc_level, alphas, E_leak, temperature,
+                         max_evaluation_time)
+        self._fixed_voltage = voltage
+        self._rates = rates
+        for variable in self._rates:
+            v = self._model.get(variable)
+            if v.is_state():
+                v.demote()
+            v.set_rhs(1)  # TODO to be inferred
+
+    def _update_state(self):
+        # Update state
+        if self._use_init_state:
+            # Use a pre-set state
+            state_to_set = self._init_state
+        else:
+            state_to_set = self.original_state
+        self._simulation2.reset()
+        self._simulation2.set_state(state_to_set)
+
+    def simulate(self, parameters, times):
+        """
+        Simulate a voltage-clamp experiment with the scalings given in
+        ``parameters``.
+
+        Parameters
+        ----------
+        parameters
+            A sequence of scaling factors for the conductances/kinetics/
+            artefacts variables.
+        times
+            Simulation time log.
+        """
+        # Update times
+        self._times = times
+
+        # Run VCModel's simulation
+        return VCModel.simulate(self, parameters, times)
 
 
 class ICModel(pints.ForwardModel):

@@ -12,11 +12,54 @@ _cnames = {# ID, file_name
     'cell3':'220314_001_ch1_csv',
     'cell4':'220314_003_ch2_csv',
     'cell5':'220314_004_ch2_csv',
+    'cell6':'nav_iv_and_inact/medium_res_data/220502_008_ch2',
+    'cell7':'nav_iv_and_inact/medium_res_data/220502_009_ch3',
+    'cell8':'nav_iv_and_inact/medium_res_data/220502_011_ch1',
+    'cell9':'nav_iv_and_inact/medium_res_data/220502_011_ch3',
+    'cell10':'nav_iv_and_inact/medium_res_data/220503_001_ch1',
+    'cell11':'nav_iv_and_inact/medium_res_data/220503_001_ch2',
+    'cell12':'nav_iv_and_inact/medium_res_data/220503_002_ch1',
+    'cell13':'nav_iv_and_inact/medium_res_data/220503_002_ch2',
+    'cell14':'nav_iv_and_inact/medium_res_data/220503_003_ch3',
+    'cell15':'nav_iv_and_inact/medium_res_data/220503_004_ch1',
+    'cell16':'nav_iv_and_inact/medium_res_data/220503_004_ch4',
+    'cell17':'nav_iv_and_inact/medium_res_data/220503_005_ch1',
+    'cell18':'nav_iv_and_inact/medium_res_data/220503_005_ch2',
+    'cell19':'nav_iv_and_inact/medium_res_data/220503_005_ch3',
+    'cell20':'nav_iv_and_inact/medium_res_data/220503_005_ch4',
 }
 
 _pnames = [f'NaIV_{j}C_{i}CP' for i in np.arange(0, 90, 20) for j in [25, 35]]
+_pnames2 = [f'NaInact_{j}C_{i}CP' for i in np.arange(0, 90, 20) for j in [35]]
 
-_naiv_steps = np.arange(-80, 40, 5)  # mV
+batch1 = ['cell1', 'cell2']
+batch2 = ['cell3', 'cell4', 'cell5']
+batch3 = ['cell6', 'cell7', 'cell8', 'cell9', 'cell10', 'cell11', 'cell12',
+          'cell13', 'cell14', 'cell15', 'cell16', 'cell17', 'cell18', 'cell19',
+          'cell20']
+
+
+def _naiv(cell):
+    if cell in batch1:
+        raise ValueError('batch1 data should use data.py instead of data2.py')
+    elif cell in batch2:
+        _naiv_steps = np.arange(-80, 40, 5)  # mV; cells 3-5
+    elif cell in batch3:
+        _naiv_steps = np.arange(-80, 70, 10)  # mV; cells 6+
+    else:
+        raise ValueError(f'No _naiv protocol defined for {cell}')
+    return _naiv_steps
+
+
+def _nainact(cell):
+    if cell in batch1:
+        raise ValueError(f'No _nainact measurements for {cell}')
+    elif cell in batch2:
+        raise ValueError(f'No _nainact measurements for {cell}')
+    elif cell in batch3:
+        _nainact_steps = np.arange(-120, -20, 10)  # mV; cells 6+
+    return _nainact_steps
+
 
 DIR_DATA = f'{DIR_METHOD}/../data'
 
@@ -55,12 +98,14 @@ def load_named(dname, pname=None, model=None, parameters=None, shift=False):
     except KeyError:
         raise ValueError(f'Unknown data set {dname}')
     if 'NaIV' in pname:
-        return load_naiv(f'{DIR_DATA}/{cname}/{pname}', shift=shift)
+        return load_naiv(f'{DIR_DATA}/{cname}/{pname}', dname, shift=shift)
+    elif 'NaInact' in pname:
+        return load_nainact(f'{DIR_DATA}/{cname}/{pname}', dname, shift=shift)
     else:
         raise ValueError(f'Unknown protocol {pname}')
 
 
-def load_naiv(path, leakcorrect=False, shift=False):
+def load_naiv(path, dname, leakcorrect=False, shift=False):
     """
     Loads an "Alex" file: CSV with each column (voltage header) for
     current (nA).
@@ -69,19 +114,68 @@ def load_naiv(path, leakcorrect=False, shift=False):
     in mV, and ``c`` is current in pA.
     """
     import pandas as pd
-    v_steps = list(_naiv_steps)
+    _naiv_steps = _naiv(dname)  # Get cell/batch data protocol info
     v_hold = -100.  # mV
-    t_hold = 10.    # ms
+    v_steps = list(_naiv_steps)
+    if dname in batch2:
+        t_hold1 = 10.    # ms; cells 1-5
+    if dname in batch3:
+        t_hold1 = 9.    # ms; cells 6+ TODO: check
     t_step = 20.    # ms
+    t_hold2 = 10.    # ms
     dt = 0.04       # ms (25 kHz)
-    times = np.arange(0, t_hold + t_step + t_hold, dt)
+    times = np.arange(0, t_hold1 + t_step + t_hold2, dt)
+    voltage = dict()
+    data = dict()
+    df = pd.read_csv(f'{path}.csv', header=0)
+    for v in v_steps:
+        vt = v_hold * np.ones(int(t_hold1 / dt))
+        vt = np.append(vt, float(v) * np.ones(int(t_step / dt)))
+        vt = np.append(vt, float(v_hold) * np.ones(int(t_hold2 / dt)))
+        voltage[v] = vt
+        data[v] = df['{:.1f}'.format(v)]
+        data[v] *= 1e3  # nA -> pA
+        if leakcorrect:
+            # Use the first 5ms holding at -100mV to leak correct the data.
+            # Assuming E_leak = 0 mV.
+            I_5ms = np.mean(data[v][:int(5. / dt)])
+            g_leak_est = I_5ms / v_hold
+            E_leak_est = 0  # assumption only
+            data[v] -= g_leak_est * (voltage[v] - E_leak_est)
+        if shift:
+            # Use the first 5ms holding at -100mV to shift the data to 0pA.
+            I_5ms = np.mean(data[v][:int(5. / dt)])
+            data[v] -= I_5ms
+    del(df)
+    return times, voltage, data
+
+
+def load_nainact(path, dname, leakcorrect=False, shift=False):
+    """
+    Loads an "Alex" file: CSV with each column (voltage header) for
+    current (nA).
+
+    Returns a tuple ``(t, v, c)`` where ``t`` is time in ms, ``v`` is voltage
+    in mV, and ``c`` is current in pA.
+    """
+    raise NotImplementedError
+    import pandas as pd
+    _nainact_steps = _nainact(dname)  # Get cell/batch data protocol info
+    v_hold = -100.  # mV
+    v_steps = list(_nainact_steps)
+    v_test = -20.   # mV
+    t_hold = 9.     # ms
+    t_step = 1000.  # ms
+    t_test = 40.    # ms
+    dt = 0.04       # ms (25 kHz)
+    times = np.arange(0, t_hold + t_step + t_test, dt)
     voltage = dict()
     data = dict()
     df = pd.read_csv(f'{path}.csv', header=0)
     for v in v_steps:
         vt = v_hold * np.ones(int(t_hold / dt))
         vt = np.append(vt, float(v) * np.ones(int(t_step / dt)))
-        vt = np.append(vt, float(v_hold) * np.ones(int(t_hold / dt)))
+        vt = np.append(vt, float(v_test) * np.ones(int(t_test / dt)))
         voltage[v] = vt
         data[v] = df['{:.1f}'.format(v)]
         data[v] *= 1e3  # nA -> pA

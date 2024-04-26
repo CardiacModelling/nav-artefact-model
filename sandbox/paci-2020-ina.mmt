@@ -1,0 +1,175 @@
+[[model]]
+name: paci-2020
+version: 20230323
+mmt_authors: Michael Clerx
+display_name: Paci et al., 2020
+desc: """
+    Myokit version of the 2020 hIPSC model by Paci et al. [1].
+
+    The equations in this model match the original Matlab code provided by
+    the authors [2]. It was verified against the original code by comparing
+    the calculated derivatives.
+
+    In this implementation, units have been converted from V to mV, and s to
+    ms. In addition, the capacitance has been converted to pF and two cell
+    volumes have been converted to pL, which removes a few scaling factors
+    from the equations.
+
+    The 2020 model contains an If current adapted from [3].
+
+    References:
+
+    [1] Paci, M., Passini, E., Klimas, A., Severi, S., Hyttinen, J.,
+        Rodriguez, B., & Entcheva, E. (2020). All-Optical Electrophysiology
+        Refines Populations of In Silico Human iPSC-CMs for Drug Evaluation.
+        Biophysical Journal, 118(10), pages 2596-2611.
+        https://doi.org/10.1016/j.bpj.2020.03.018
+
+    [2] https://www.mcbeng.it/en/downloads/software/paci2020.html
+
+    [3] Koivumäki, J. T., Naumenko, N., Tuomainen, T., Takalo, J., Oksanen, M.,
+        Puttonen, K. A., Lehtonen, Š., Kuusisto, J., Laakso, M., Koistinaho,
+        J., & Tavi, P. (2018). Structural Immaturity of Human iPSC-Derived
+        Cardiomyocytes: In Silico Investigation of Effects on Function and
+        Disease Modeling. Frontiers in Physiology, 9.
+        https://doi.org/10.3389/fphys.2018.00080
+
+"""
+# Initial state
+membrane.V = -100
+ina.m        = 0
+ina.h        = 0.75
+ina.j        = 0.75
+
+[engine]
+time = 0 [ms]
+    in [ms]
+    bind time
+pace = 0
+    bind pace
+
+
+[membrane]
+i_ion = (
+    + ina.i_Na
+    )
+    in [pA]
+    label cellular_current
+dot(V) = -(i_ion + stimulus.i_stim) / cell.Cm
+    label membrane_potential
+    in [mV]
+
+
+[stimulus]
+i_stim = engine.pace * amplitude
+    in [pA]
+amplitude = -3 * 60 [pA]
+    in [pA]
+
+
+#
+# INa
+# The INa formulation in 2020 is completely different from before
+#
+[ina]
+desc: INa adapted from DOI:10.3389/fphys.2018.00080
+use membrane.V
+dot(m) = (inf - m) / tau
+    inf = 1 / (1 + exp((V + 39 [mV]) / - 11.2 [mV]))
+    tau = (+ 0.01 [ms]
+           + 0.13 [ms] * exp(-((V + 48 [mV]) / 15 [mV])^2)
+           + 0.045 [ms] / (1 + exp((V + 42 [mV]) / -5 [mV])))
+        in [ms]
+h_inf = 1 / (1 + exp((V + 66.5 [mV]) / 6.8 [mV]))
+dot(h) = (h_inf - h) / tau
+    tau = (0.07 [ms]
+           + 34 [ms] / (1 + exp((V + 41 [mV]) / 5.5 [mV]) + exp(-(V + 41 [mV]) / 14 [mV]))
+           + 0.2 [ms] / (1 + exp(-(V + 79 [mV]) / 14 [mV])))
+        in [ms]
+dot(j) = (h_inf - j) / tau
+    tau = 10 * (0.7 [ms]
+                + 150 [ms] / (1 + exp((V + 41 [mV]) / 5.5 [mV]) + exp(-(V + 41 [mV]) / 14 [mV]))
+                + 2 [ms] / (1 + exp(-(V + 79 [mV]) / 14 [mV])))
+        in [ms]
+g = 60 [pA/mV]
+    in [nS]
+    label g_Na
+i_Na = g * m^3 * h * j * (V - rev.ENa)
+    in [pA]
+    label I_Na
+kn = 0
+    label k_Na_n
+
+
+#
+# Cell size
+#
+[cell]
+Cm = 60 [pF]
+    in [pF]
+    label membrane_capacitance
+
+
+#
+# Physical constants
+#
+[phys]
+T = 310 [K]
+    in [K]
+R = 8.314472 [J / mol / K]
+    in [J / mol / K]
+F = 96.4853415 [C / mmol]
+    in [C / mmol]
+RTF = R * T / F
+    in [mV]
+
+
+#
+# Internal potassium concentration
+#
+[potassium]
+Ki = 150 [mM]
+    in [mM]
+    label K_i
+
+#
+# Internal sodium concentration
+#
+[sodium]
+Nai = 10 [mM]
+    in [mM]
+    label Na_i
+
+#
+# Internal calcium concentrations
+#
+[calcium]
+Cai = 0.1 [mM]
+    in [mM]
+    label Ca_i
+
+#
+# Extracellular concentrations
+#
+[extra]
+Cao = 1.8 [mM]
+    in [mM]
+    label Ca_o
+Nao = 151 [mM]
+    in [mM]
+    label Na_o
+Ko = 5.4 [mM]
+    in [mM]
+    label K_o
+
+#
+# Reversal potentials
+#
+[rev]
+use phys.RTF
+ECa = 0.5 * RTF * log(extra.Cao / calcium.Cai)
+    in [mV]
+EK = RTF * log(extra.Ko / potassium.Ki)
+    in [mV]
+ENa = RTF * log(extra.Nao / sodium.Nai)
+    in [mV]
