@@ -88,6 +88,10 @@ axes[2, 1].set_xlabel('Time (ms)')
 axes[0, 0].set_title('Simulations')
 axes[0, 1].set_title('Data')
 
+ax = axes[-1, 0]
+labels = [int(item.get_text()) - 9 for item in ax.get_xticklabels()]
+ax.set_xticklabels(labels)
+
 fig.tight_layout()
 plt.savefig('compensation-level-sweeps.pdf', format='pdf')
 plt.show()
