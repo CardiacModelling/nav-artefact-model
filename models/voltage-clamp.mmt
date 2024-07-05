@@ -25,6 +25,7 @@ voltage_clamp.V_clamp = -100
 voltage_clamp.V_p     = -100
 voltage_clamp.V_est   = -100
 voltage_clamp.I_out   =  0
+voltage_clamp.V_c     = -100
 
 #
 # Simulator variables: To be replaced with model variables
@@ -64,8 +65,12 @@ dot(V) = (V_p + V_offset_eff - V) / (Cm * R_series) - (I_ion + I_leak) / Cm
 [voltage_clamp]
 use cell.Cm
 use membrane.V
-V_c = engine.pace * 1 [mV]
+V_c_input = engine.pace * 1 [mV]
     desc: Command voltage
+    in [mV]
+tau_stim = 20e-3 [ms]
+dot(V_c) = (V_c_input - V_c) / tau_stim
+    desc: Stimulus delay
     in [mV]
 Cm_est = 0.9 * Cm
     in [pF]
@@ -93,9 +98,9 @@ V_offset_eff = -1 [mV]
     in [mV]
     desc: Effective voltage offset
 
-tau_sum = 40e-3 [ms]
+tau_sum = 1e-3 [ms]
     in [ms]
-    desc: Summation delay (approximately 5--70 us)
+    desc: Summation delay (O(1) us)
 dot(V_clamp) = (V_c + (I_out * alpha_R + Cm_est * dot(V_est) * alpha_P) * R_series_est - V_clamp) / tau_sum
     desc: Clamp voltage
     in [mV]
@@ -107,7 +112,7 @@ dot(V_p) = (V_clamp - V_p) / tau_clamp
     in [mV]
     desc: Pipette voltage
 
-tau_out = 7.5e-3 [ms]
+tau_out = 0.2e-3 [ms]  # O(1) kHz cut-off frequency for low pass filter
     in [ms]
     desc: Feedback delay
 dot(I_out) = (I_in - I_out) / tau_out
