@@ -66,7 +66,7 @@ def main(model, data_file, g, meta):
         axes[2, 0].plot(data[:, 0], data[:, i+1] * cm, c=colour_palette_1[i])
     axes[1, 0].legend(loc=4)
 
-    alphas = [(0, 80), (20, 80), (40, 80), (60, 80), (80, 80)]
+    alphas = [(0, 70), (20, 70), (40, 70), (60, 70), (80, 70)]
     for i, (r, p) in enumerate(alphas):
         x.set_artefact_parameters({
             'voltage_clamp.alpha_R': r / 100.,
@@ -87,6 +87,10 @@ def main(model, data_file, g, meta):
     axes[2, 0].set_xlabel('Time (ms)')
     axes[2, 1].set_xlabel('Time (ms)')
 
+    ax = axes[-1, 0]
+    labels = [int(item.get_text()) - 9 for item in ax.get_xticklabels()]
+    ax.set_xticklabels(labels)
+
     fig.tight_layout()
     plt.savefig(f'compensation-level-sweeps-2/compensation-level-sweeps-2-{os.path.basename(model.strip(".mmt"))}-{data_file}.pdf', format='pdf')
     plt.close()
@@ -94,7 +98,7 @@ def main(model, data_file, g, meta):
 
 
 model_list = ['paci-2020-ina.mmt', models.mmt('gray')]
-gs_list = [[2, 5, 7, 8], [0.2, 0.5, 0.7, 0.8]]
+gs_list = [[2 / 2.5, 5 / 2.5, 7 / 2.5, 8 / 2.5], [0.2, 0.5, 0.7, 0.8]]
 data_list = ['4_021821_2_alex_control', '4_021821_4_alex_control', '4_021921_1_alex_control', '4_021921_2_alex_control']
 meta_list = [(21.7, 44.2e-3), (27.4, 19.5e-3), (51.5, 25e-3), (51.0, 39.3e-3)]
 
