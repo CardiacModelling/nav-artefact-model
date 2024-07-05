@@ -30,7 +30,7 @@ rs = 19.5e-3  # GOhm
 
 print(x.fit_parameter_names())
 
-param = [5]#[3.5]
+param = [2]#[5]#[3.5]
 print(param)
 
 x.set_artefact_parameters({
@@ -66,7 +66,7 @@ for i, (r, p) in enumerate(alphas):
     axes[1, 1].plot(data[:, 0], data[:, i+1] * cm, c=colour_palette_1[i])
 axes[1, 0].legend(loc=4)
 
-alphas = [(0, 80), (20, 80), (40, 80), (60, 80), (80, 80)]
+alphas = [(0, 70), (20, 70), (40, 70), (60, 70), (80, 70)]
 for i, (r, p) in enumerate(alphas):
     x.set_artefact_parameters({
         'voltage_clamp.alpha_R': r / 100.,
