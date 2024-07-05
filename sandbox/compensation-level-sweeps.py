@@ -88,6 +88,20 @@ axes[2, 1].set_xlabel('Time (ms)')
 axes[0, 0].set_title('Simulations')
 axes[0, 1].set_title('Data')
 
+for i in [0, 1]:
+    axes[1, i].annotate(
+        '', xy=(11, -2500), xytext=(12, -2500),
+        arrowprops=dict(arrowstyle='->', lw=2, color=colour_palette_1[0],)
+    )
+    axes[1, i].text(11.5, -2600, s=r'$\uparrow$$\alpha_P$',
+                    fontsize=12, ha='center', va='top')
+    axes[2, i].annotate(
+        '', xy=(11.5, -3500), xytext=(11.5, -2000),
+        arrowprops=dict(arrowstyle='->', lw=2, color=colour_palette_2[0])
+    )
+    axes[2, i].text(11.6, -2750, s=r'$\uparrow$$\alpha_R$',
+                    fontsize=12, ha='left', va='center')
+
 ax = axes[-1, 0]
 labels = [int(item.get_text()) - 9 for item in ax.get_xticklabels()]
 ax.set_xticklabels(labels)
