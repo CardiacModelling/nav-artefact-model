@@ -26,6 +26,8 @@ USE_IV_FIT = not True
 
 figures = 'figures'
 
+ARROW = True
+
 #TODO
 pnames = [pnames[0]]
 
@@ -114,7 +116,7 @@ ideal.set_protocol(protocol_ljp, dt=dt, v_hold=v_hold, t_hold=t_hold, mask=mask)
 
 # Create long VC model
 protocol_long = [[-100., 9.1], [-80., 20.], [-100., 10.]]
-s = 2  # mV
+s = 7.5  # mV
 vs_long = np.arange(-80, 60 + s, s)
 t_hold_long = 200 # ms
 for i in vs_long[1:]:
@@ -191,29 +193,23 @@ irv = ideal.voltage(parameters[0][:ideal.n_parameters()])
 tiv, vi = protocols.fold(ideal.times(), irv, step_duration, discard=discard)
 #ax_iv_1.plot(vi_iv, ii_iv, c='k', ls=':', label=f'ideal')
 ax_iv_2.plot(vi_iv, ii_iv, c='k', ls=':', label=f'ideal')
-ax_iv_1.axvline(x=-30, c='#7f7f7f', ls=':', label='__')
-ax_iv_1.axvline(x=-10, c='#7f7f7f', ls='--', label='__')
-ax_iv_2.axvline(x=-30, c='#7f7f7f', ls=':', label='__')
-ax_iv_2.axvline(x=-10, c='#7f7f7f', ls='--', label='__')
+ax_iv_1.axvline(x=-30, c='#7f7f7f', ls=':')
+ax_iv_1.axvline(x=-10, c='#7f7f7f', ls='--')
+ax_iv_2.axvline(x=-30, c='#7f7f7f', ls=':')
+ax_iv_2.axvline(x=-10, c='#7f7f7f', ls='--')
 
 # Create plots for -30 and -10 mV (index 5 and 7)
 for i, alpha in enumerate([0, 20, 40, 60, 80]):
     c = colour_list[i]
 
     axv1 = plt.subplot2grid(shape=(14, 10), loc=(1, i+5), rowspan=3, fig=fig)
-    axes_v1.append(axv1)
     axi1 = plt.subplot2grid(shape=(14, 10), loc=(4, i+5), rowspan=3, fig=fig)
-    axes_i1.append(axi1)
     axv2 = plt.subplot2grid(shape=(14, 10), loc=(8, i+5), rowspan=3, fig=fig)
-    axes_v2.append(axv2)
     axi2 = plt.subplot2grid(shape=(14, 10), loc=(11, i+5), rowspan=3, fig=fig)
-    axes_i2.append(axi2)
 
-    # Ideal
+    # Command voltage
     axv1.step(tiv, vi[5]+LJP, ls=':', c='#7f7f7f') # where='post' # Voltage
     axv2.step(tiv, vi[7]+LJP, ls=':', c='#7f7f7f') # where='post' # Voltage
-    axi1.plot(ti, ci[5], ls=':', label='__' if i else 'ideal', c='#7f7f7f')
-    axi2.plot(ti, ci[7], ls=':', label='__' if i else 'ideal', c='#7f7f7f')
 
     pname = f'NaIV_{int(temperature - 273.15)}C_{alpha}CP'
     try:
@@ -248,18 +244,22 @@ for i, alpha in enumerate([0, 20, 40, 60, 80]):
     model.set_protocol(protocol, dt=dt, v_hold=v_hold, t_hold=t_hold, mask=mask)
 
     if has_data:
-        axi1.plot(tr, cr_d[-30], label='__' if i else 'data', c=c)
+        axi1.plot(tr, cr_d[-30], label='Data', c=c)
     axi1.plot(tm, cm[5],
                 c=axi1.get_lines()[-1].get_color(),
-                ls='--', label='__' if i else 'fitted')
+                ls='--', label='Model prediction')
     axv1.plot(tvm, vm[5], ls='--', c=c) # Voltage
 
     if has_data:
-        axi2.plot(tr, cr_d[-10], label='__' if i else 'data', c=c)
+        axi2.plot(tr, cr_d[-10], label='Data', c=c)
     axi2.plot(tm, cm[7],
                 c=axi2.get_lines()[-1].get_color(),
-                ls='--', label='__' if i else 'fitted')
+                ls='--', label='Model prediction')
     axv2.plot(tvm, vm[7], ls='--', c=c) # Voltage
+
+    # Ideal
+    axi1.plot(ti, ci[5], ls=':', label='Physiological', c='#7f7f7f')
+    axi2.plot(ti, ci[7], ls=':', label='Physiological', c='#7f7f7f')
 
     # IV plot
     if has_data:
@@ -297,15 +297,20 @@ for i, alpha in enumerate([0, 20, 40, 60, 80]):
         axv2.set_ylabel('Voltage (mV)')
         axi2.set_ylabel('Current (pA)')
 
+    axes_v1.append(axv1)
+    axes_i1.append(axi1)
+    axes_v2.append(axv2)
+    axes_i2.append(axi2)
+
 
 # Big plot tidy
 for ax in axes_v1 + axes_i1 + axes_v2 + axes_i2:
     #ax.set_ylim([ymin-100, ymax+100])
     if dname in data.batch3 + data.batch4:
-        ax.set_xlim([9, 10])
+        ax.set_xlim([8.9, 10])
     else:
         ax.set_xlim([9.5, 14])
-    ax.set_xticks([9, 10])
+    ax.set_xticks([8.9, 10])
     ax.set_xticklabels([])
 for ax in axes_v1 + axes_v2:
     #ax.set_xticklabels([])
@@ -332,10 +337,24 @@ ax_iv_1.text(-0.15, 0.95, 'A', transform=ax_iv_1.transAxes,
                 ha='center', va='center', fontsize=12, fontweight='bold')
 ax_iv_2.text(-0.15, 0.95, 'B', transform=ax_iv_2.transAxes,
                 ha='center', va='center', fontsize=12, fontweight='bold')
-axes_v1[0].text(-0.5, 1.15, 'C', transform=axes_v1[0].transAxes,
+axes_v1[0].text(-0.5, 1.3, 'C', transform=axes_v1[0].transAxes,
                 ha='center', va='center', fontsize=12, fontweight='bold')
-axes_v2[0].text(-0.5, 1.15, 'D', transform=axes_v2[0].transAxes,
+axes_v2[0].text(-0.5, 1.3, 'D', transform=axes_v2[0].transAxes,
                 ha='center', va='center', fontsize=12, fontweight='bold')
+
+axes_i1[-1].legend(bbox_to_anchor=(0.85, 1.2), loc="lower right", ncol=3,
+                   bbox_transform=axes_v1[-1].transAxes)
+
+if ARROW:
+    ax_iv_1.annotate(
+        '', xy=(25, -35000), xytext=(-15, -2500),
+        arrowprops=dict(arrowstyle='->', lw=2, color='C2', alpha=0.75)
+    )
+    ax_iv_2.annotate(
+        '', xy=(25, -35000), xytext=(-15, -2500),
+        arrowprops=dict(arrowstyle='->', lw=2, color='C2', alpha=0.75)
+    )
+    ax_iv_2.text(22.5, -27500, 'Physiological', fontsize=12, ha='left')
 
 # Colorbar
 fig.subplots_adjust(top=0.945)
