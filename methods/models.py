@@ -688,7 +688,7 @@ class VCModel(pints.ForwardModel):
         x = self._simulate(parameters, extra=[vm])
         return x[1]
 
-    def set_artefact_parameters(self, parameter_dict, verbose=True):
+    def set_artefact_parameters(self, parameter_dict, extra=[], verbose=True):
         """
         Set a new set of parameters for the full voltage clamp model.
         """
@@ -698,7 +698,7 @@ class VCModel(pints.ForwardModel):
                 ' voltage-clamp model.')
 
         self._create_simulations()
-        str_artefact_vars = [str(v) for v in self._artefact_vars]
+        str_artefact_vars = [str(v) for v in self._artefact_vars] + extra
         str_parameters = [str(v) for v in self._parameters]
         # print(self._original)
         for var in parameter_dict.keys():
