@@ -1,0 +1,169 @@
+[[model]]
+author: Myokit CellML 1 API
+name: Ord 
+# Initial values
+Membrane.V               = -87
+INa.m                    = 0 
+INa.hf                    = 1
+INa.hs                    = 1
+INa.j                    = 1
+INa.hsp                    = 1
+INa.jp                    = 1
+voltageclamp.Vclamp = -80.0 [mV]
+voltageclamp.Vp = -80.0 [mV]
+voltageclamp.Vest = -80.0 [mV]
+voltageclamp.Iout = 0.0 [mV]
+
+[engine]
+time = 0 [ms]
+    in [ms]
+    bind time
+pace = 0
+    bind pace
+
+[stimulus]
+i_stim = engine.pace * amplitude
+    in [A/F]
+amplitude = -10 [A/F]
+    in [A/F]
+
+[Membrane]
+use voltageclamp.Vp, voltageclamp.rseries, voltageclamp.voffset_eff, model_parameters.Cm
+i_ion = INa.INa
+i_ion_star = i_ion * Cm + voltageclamp.ILeak
+dot(V) = (Vp - V + voffset_eff) / tau - i_ion_star / Cm
+    tau = Cm * rseries in [ms]
+    desc: membrane potential
+    in [mV]
+
+[voltageclamp]
+use Membrane.V, model_parameters.Cm
+# Parameters
+rseries = 20 * 1e-3 [GR]  # in order of MegaOhms; TODO: fit
+cprs = 4.0 [pF]  # Unknown value for 'parasitic' capacitance at electrode...
+cprs_est = 4.0 [pF]  # eff. parasitic capacitance at electrode; TODO: fit
+voffset_eff = -3 [mV]  # TODO: fit
+rseries_est = 20 * 1e-3 [GR]  # TODO: later this one use measured value
+cm_est = 60 [pF]  # TODO: similar to rseries_est, set value
+alpha_c = 0.7 [1]  # NOTE: percentage of compensation, this is included in rseries_est already
+alpha_p = 0.7 [1]  # NOTE: percentage of compensation, this is included in rseries_est already
+
+# Command voltage
+Vc = engine.pace
+    desc: command voltage
+    in [mV]
+
+# Rs compensation and summing delay
+tau_sum = 40e-3 in [ms]  # electronic delay term, ~ 5 - 70 microsecond
+Vc_prime = (Vc + alpha_c*rseries_est*Iout + alpha_p*rseries_est*cm_est*dVestdt)
+dVclampdt = (Vc_prime - Vclamp) / tau_sum
+    in [mV/ms]
+dot(Vclamp) = dVclampdt
+    desc: clamp voltage
+    in [mV]
+
+# Supercharging
+dVestdt = piecewise(
+    cm_est < 1e-6, 0,
+    rseries_est < 1e-6, 0,
+    (Vc - Vest) / ((1 - alpha_p) * cm_est * rseries_est)
+) in [mV/ms]
+dot(Vest) = dVestdt
+    in [mV]
+
+# Amplifier delay
+tau_clamp = 0.8 * 1e-3 in [ms]
+dVpdt = (Vclamp - Vp) / tau_clamp in [mV/ms]
+dot(Vp) = dVpdt
+    desc: pipette voltage
+    in [mV]
+
+# Feedback delay
+dot(Iout) = (Iin - Iout) / tau
+    tau = 7.5 * 1e-3 in [ms]
+    desc: measured current
+    in [pA]
+
+Iin = (
+        (Vp - V + voffset_eff) / rseries
+        + cprs * dVpdt
+        - cprs_est * dVclampdt
+        - cm_est * if(rseries_est < 1e-6, dVclampdt, dVestdt)
+    )
+    in [pA]
+
+## assume linear leak residual
+gLeak = 1 [pA/mV]
+ELeak = 0 [mV]
+ILeak = gLeak * (V - ELeak) in [pA]
+
+
+[INa]
+use reversal_potentials.ENa, Membrane.V
+mss=1.0/(1.0+exp((-(V+39.57))/9.871))
+tm=1.0/(6.765*exp((V+11.64)/34.77)+8.552*exp(-(V+77.42)/5.955))
+dot(m)=(mss-m)/tm
+
+hss=1.0/(1+exp((V+82.90)/6.086))
+thf=1.0/(1.432e-5*exp(-(V+1.196)/6.285)+6.149*exp((V+0.5096)/20.27))
+ths=1.0/(0.009794*exp(-(V+17.95)/28.05)+0.3343*exp((V+5.730)/56.66))
+Ahf=0.99
+Ahs=1.0-Ahf
+
+dot(hf)=(hss-hf)/thf
+dot(hs)=(hss-hs)/ths
+h=Ahf*hf+Ahs*hs
+jss=hss
+tj=2.038+1.0/(0.02136*exp(-(V+100.6)/8.281)+0.3052*exp((V+0.9941)/38.45))
+
+dot(j)=(jss-j)/tj
+hssp=1.0/(1+exp((V+89.1)/6.086))
+thsp=3.0*ths
+dot(hsp)=(hssp-hsp)/thsp
+hp=Ahf*hf+Ahs*hsp
+tjp=1.46*tj
+dot(jp)=(jss-jp)/tjp
+GNa=75
+g_Na_scale = 1
+INa=g_Na_scale*GNa*(V-ENa)*m^3.0*h*j
+
+
+[environment]
+celltype = 0
+    in [1]
+
+[extracellular]
+nao = 145 [mM]
+    in [mM]
+    oxmeta: extracellular_sodium_concentration
+
+[intracellular_ions]
+nai = 10
+
+[physical_constants]
+F = 96485 [C/mol]
+    in [C/mol]
+R = 8314 [mJ/mol/K]
+    in [mJ/mol/K]
+T = 310 [K]
+    in [K]
+zca = 2
+    in [1]
+zcl = -1
+    in [1]
+zk = 1
+    in [1]
+zna = 1
+    in [1]
+
+[reversal_potentials]
+ENa = physical_constants.R * physical_constants.T / (physical_constants.zna * physical_constants.F) * log(extracellular.nao / intracellular_ions.nai)
+    in [mV]
+
+
+[model_parameters]
+Cm = 60
+
+[[protocol]]
+#Level  Start    Length   Period   Multiplier
+4.0      10       1        1000      0
