@@ -346,14 +346,14 @@ axes_i1[-1].legend(bbox_to_anchor=(0.85, 1.2), loc="lower right", ncol=3,
                    bbox_transform=axes_v1[-1].transAxes)
 
 if ARROW:
-    ax_iv_1.annotate(
-        '', xy=(25, -35000), xytext=(-15, -2500),
-        arrowprops=dict(arrowstyle='->', lw=2, color='C2', alpha=0.75)
-    )
-    ax_iv_2.annotate(
-        '', xy=(25, -35000), xytext=(-15, -2500),
-        arrowprops=dict(arrowstyle='->', lw=2, color='C2', alpha=0.75)
-    )
+    #ax_iv_1.annotate(
+    #    '', xy=(25, -35000), xytext=(-15, -2500),
+    #    arrowprops=dict(arrowstyle='->', lw=2, color='C2', alpha=0.75)
+    #)
+    #ax_iv_2.annotate(
+    #    '', xy=(25, -35000), xytext=(-15, -2500),
+    #    arrowprops=dict(arrowstyle='->', lw=2, color='C2', alpha=0.75)
+    #)
     ax_iv_2.text(22.5, -27500, 'Physiological', fontsize=12, ha='left')
 
 # Colorbar
