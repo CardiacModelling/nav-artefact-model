@@ -7,7 +7,7 @@ from methods import models
 from methods import protocols
 import seaborn as sns
 colour_palette_1 = sns.dark_palette("#69d", 6, reverse=True)
-colour_palette_2 = sns.dark_palette("seagreen", 6, reverse=True)
+colour_palette_2 = sns.dark_palette("salmon", 6, reverse=True)
 
 # Loop through different alphas to see the effects.
 x = models.VCModel('paci-2020-ina.mmt', False, False, models.VC_FULL)
@@ -93,18 +93,22 @@ for i in [0, 1]:
         '', xy=(11, -2500), xytext=(12, -2500),
         arrowprops=dict(arrowstyle='->', lw=2, color=colour_palette_1[0],)
     )
-    axes[1, i].text(11.5, -2600, s=r'$\uparrow$$\alpha_P$',
+    #axes[1, i].text(11.5, -2600, s=r'$\uparrow$$\alpha_P$',
+    axes[1, i].text(11.5, -2700, s='Increasing\nprediction',
                     fontsize=12, ha='center', va='top')
     axes[2, i].annotate(
         '', xy=(11.5, -3500), xytext=(11.5, -2000),
         arrowprops=dict(arrowstyle='->', lw=2, color=colour_palette_2[0])
     )
-    axes[2, i].text(11.6, -2750, s=r'$\uparrow$$\alpha_R$',
+    #axes[2, i].text(11.6, -2750, s=r'$\uparrow$$\alpha_R$',
+    axes[2, i].text(11.6, -2750, s=r'Increasing $R_\text{s}$''\ncompensation',
                     fontsize=12, ha='left', va='center')
 
 ax = axes[-1, 0]
 labels = [int(item.get_text()) - 9 for item in ax.get_xticklabels()]
 ax.set_xticklabels(labels)
+
+fig.align_ylabels(axes[:, 0])
 
 fig.tight_layout()
 plt.savefig('compensation-level-sweeps.pdf', format='pdf')
