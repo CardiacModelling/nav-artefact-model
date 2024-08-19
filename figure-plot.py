@@ -333,13 +333,13 @@ ax_iv_2.set_ylabel('Model current (pA)')
 fig.align_ylabels([ax_iv_1, ax_iv_2])
 fig.align_ylabels(axes_v1 + axes_i1 + axes_v2 + axes_i2)
 
-ax_iv_1.text(-0.15, 0.95, 'A', transform=ax_iv_1.transAxes,
+ax_iv_1.text(-0.15, 0.95, 'i', transform=ax_iv_1.transAxes,
                 ha='center', va='center', fontsize=12, fontweight='bold')
-ax_iv_2.text(-0.15, 0.95, 'B', transform=ax_iv_2.transAxes,
+ax_iv_2.text(-0.15, 0.95, 'ii', transform=ax_iv_2.transAxes,
                 ha='center', va='center', fontsize=12, fontweight='bold')
-axes_v1[0].text(-0.5, 1.3, 'C', transform=axes_v1[0].transAxes,
+axes_v1[0].text(-0.5, 1.3, 'iii', transform=axes_v1[0].transAxes,
                 ha='center', va='center', fontsize=12, fontweight='bold')
-axes_v2[0].text(-0.5, 1.3, 'D', transform=axes_v2[0].transAxes,
+axes_v2[0].text(-0.5, 1.3, 'iv', transform=axes_v2[0].transAxes,
                 ha='center', va='center', fontsize=12, fontweight='bold')
 
 axes_i1[-1].legend(bbox_to_anchor=(0.85, 1.2), loc="lower right", ncol=3,

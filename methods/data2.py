@@ -37,6 +37,7 @@ batch2 = ['cell3', 'cell4', 'cell5']
 batch3 = ['cell6', 'cell7', 'cell8', 'cell9', 'cell10', 'cell11', 'cell12',
           'cell13', 'cell14', 'cell15', 'cell16', 'cell17', 'cell18', 'cell19',
           'cell20']
+batch4 = []
 
 
 def _naiv(cell):
@@ -253,7 +254,7 @@ def load_info(cname):
     return info.loc[cell]['cm'], info.loc[cell]['rs'] * 1e-3  # M -> G
 
 
-def setup_model_vc(dname, model):
+def setup_model_vc(dname, model, ljp=0):
     """
     Prepare VCModel object for voltage clamp parameters with a given dname.
     """
@@ -274,4 +275,6 @@ def setup_model_vc(dname, model):
             'voltage_clamp.R_series':rs,
             'voltage_clamp.g_leak':g_leak,
             'voltage_clamp.E_leak':0,  # Imperfect seal leak
+            # Values to infer not by scaling (not that useful during fitting)
+            'voltage_clamp.V_offset_eff':-ljp,
         })
