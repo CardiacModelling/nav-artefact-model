@@ -1,0 +1,6 @@
+error: 3.30309924207766354e+07
+time: 3.73971862543374300e+03
+iterations: 266
+evaluations: 267
+parameters:
+     5.95532383446928204e+00
