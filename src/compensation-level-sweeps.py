@@ -50,10 +50,10 @@ x.set_artefact_parameters({
 
 fig, axes = plt.subplots(3, 2, sharex=True, sharey='row', figsize=(12, 6.5), gridspec_kw={'height_ratios': [1, 2, 2]})
 
-axes[0, 0].plot(y.times(), y.voltage(param), c='#7f7f7f', ls='--')
 axes[0, 1].plot(y.times(), y.voltage(param), c='#7f7f7f', ls='--')
-axes[1, 0].plot(y.times(), y.simulate(param), c='#7f7f7f', ls='--', label='ideal')
-axes[2, 0].plot(y.times(), y.simulate(param), c='#7f7f7f', ls='--', label='ideal')
+axes[0, 0].plot(y.times(), y.voltage(param), c='#7f7f7f', ls='--')
+axes[1, 1].plot(y.times(), y.simulate(param), c='#7f7f7f', ls='--', label='ideal')
+axes[2, 1].plot(y.times(), y.simulate(param), c='#7f7f7f', ls='--', label='ideal')
 
 alphas = [(0, 0), (0, 20), (0, 40), (0, 60), (0, 80)]
 for i, (r, p) in enumerate(alphas):
@@ -61,10 +61,10 @@ for i, (r, p) in enumerate(alphas):
         'voltage_clamp.alpha_R': r / 100.,
         'voltage_clamp.alpha_P': p / 100.,
     })
-    axes[0, 0].plot(x.times(), x.voltage(param), c=colour_palette_1[i])
-    axes[1, 0].plot(x.times(), x.simulate(param), c=colour_palette_1[i], label=r'$\alpha_R = %d, \alpha_P = %d$' % (r, p))
-    axes[1, 1].plot(data[:, 0], data[:, i+1] * cm, c=colour_palette_1[i])
-axes[1, 0].legend(loc=4)
+    axes[0, 1].plot(x.times(), x.voltage(param), c=colour_palette_1[i])
+    axes[1, 1].plot(x.times(), x.simulate(param), c=colour_palette_1[i], label=r'$\alpha_R = %d, \alpha_P = %d$' % (r, p))
+    axes[1, 0].plot(data[:, 0], data[:, i+1] * cm, c=colour_palette_1[i])
+axes[1, 1].legend(loc=4)
 
 alphas = [(0, 70), (20, 70), (40, 70), (60, 70), (80, 70)]
 for i, (r, p) in enumerate(alphas):
@@ -72,21 +72,21 @@ for i, (r, p) in enumerate(alphas):
         'voltage_clamp.alpha_R': r / 100.,
         'voltage_clamp.alpha_P': p / 100.,
     })
-    axes[0, 0].plot(x.times(), x.voltage(param), c=colour_palette_2[i])
-    axes[2, 0].plot(x.times(), x.simulate(param), c=colour_palette_2[i], label=r'$\alpha_R = %d, \alpha_P = %d$' % (r, p))
-    axes[2, 1].plot(data[:, 0], data[:, i+1+5] * cm, c=colour_palette_2[i])
-axes[2, 0].legend(loc=4)
+    axes[0, 1].plot(x.times(), x.voltage(param), c=colour_palette_2[i])
+    axes[2, 1].plot(x.times(), x.simulate(param), c=colour_palette_2[i], label=r'$\alpha_R = %d, \alpha_P = %d$' % (r, p))
+    axes[2, 0].plot(data[:, 0], data[:, i+1+5] * cm, c=colour_palette_2[i])
+axes[2, 1].legend(loc=4)
 
-axes[0, 0].set_xlim([9, 15])
+axes[0, 1].set_xlim([9, 15])
 
-axes[0, 0].set_ylabel('Voltage (mV)')
-axes[1, 0].set_ylabel('Current (pA)')
-axes[2, 0].set_ylabel('Current (pA)')
-axes[2, 0].set_xlabel('Time (ms)')
+axes[0, 1].set_ylabel('Voltage (mV)')
+axes[1, 1].set_ylabel('Current (pA)')
+axes[2, 1].set_ylabel('Current (pA)')
 axes[2, 1].set_xlabel('Time (ms)')
+axes[2, 0].set_xlabel('Time (ms)')
 
-axes[0, 0].set_title('Simulations')
-axes[0, 1].set_title('Data')
+axes[0, 1].set_title('Simulations')
+axes[0, 0].set_title('Data')
 
 for i in [0, 1]:
     axes[1, i].annotate(
@@ -101,12 +101,12 @@ for i in [0, 1]:
         arrowprops=dict(arrowstyle='->', lw=2, color=colour_palette_2[0])
     )
     #axes[2, i].text(11.6, -2750, s=r'$\uparrow$$\alpha_R$',
-    axes[2, i].text(11.6, -2750, s=r'Increasing $R_\text{s}$''\ncompensation',
+    axes[2, i].text(11.6, -2750, s=r'Increasing $R_s$''\ncompensation',
                     fontsize=12, ha='left', va='center')
 
-ax = axes[-1, 0]
-labels = [int(item.get_text()) - 9 for item in ax.get_xticklabels()]
-ax.set_xticklabels(labels)
+#ax = axes[-1, 1]
+#labels = [int(item.get_text()) - 9 for item in ax.get_xticklabels()]
+#ax.set_xticklabels(labels)
 
 fig.align_ylabels(axes[:, 0])
 
