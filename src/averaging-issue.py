@@ -3,6 +3,7 @@ import sys
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from scipy.stats import linregress
 
 normalise = '--norm' in sys.argv
 
@@ -37,14 +38,21 @@ for ax, choice, alpha in zip(axes, [choice1, choice2, choice3], alphas):
             normalised.append(iv)
         ax.plot(all_v, normalised[-1], 'grey', alpha=alpha)
 
-    line1 = ax.plot(all_v, np.mean(normalised, axis=0), 'C0', marker='o', mfc='none', label='Average')
-    ebars = ax.errorbar(all_v, np.mean(normalised, axis=0), yerr=sem(normalised), c='C0')
+    m = np.mean(normalised, axis=0)
+    line1 = ax.plot(all_v, m, 'C0', marker='o', mfc='none', label='Average')
+    ebars = ax.errorbar(all_v, m, yerr=sem(normalised), c='C0')
+
+    i = np.argmin(m)
+    print('Average:', linregress(all_v[i+1:i+7], m[i+1:i+7]))
 
     if normalise:
         b = baseline_dat / np.max(np.abs(baseline_dat))
     else:
         b = baseline_dat
     line2 = ax.plot(all_v, b, c=(.8, .1, .1), marker='o', label='Physiological')
+
+    i = np.argmin(b)
+    print('Physiological:', linregress(all_v[i+1:i+7], b[i+1:i+7]))
 
     ax.set_xlabel('Voltage (mV)', fontsize=10)
 
@@ -56,7 +64,7 @@ for i in [1, 2]:
     axes[i].axes.get_yaxis().set_visible(False)
     axes[i].spines['left'].set_visible(False)
 
-axes[0].set_ylabel('Normalised current', fontsize=10)
+axes[0].set_ylabel('Current density (pA/pF)', fontsize=10)
 axes[-1].legend(loc=4, fontsize=10)
 axes[-1].set_xlim(-96, 59)
 
