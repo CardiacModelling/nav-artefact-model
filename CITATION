@@ -1,0 +1,19 @@
+To cite this repository or the article in publications, please use:
+
+Chon Lok Lei, Alexander P. Clark, Michael Clerx, Siyu Wei, Meye Bloothooft, Teun P. de Boer, David J. Christini, Trine Krogh-Madsen, Gary R. Mirams.
+(2024).
+Resolving artefacts in voltage-clamp experiments with computational modelling: an application to fast sodium current recordings.
+bioRxiv, 2024.07.23.604780.
+
+https://doi.org/10.1101/2024.07.23.604780
+
+A BibTeX entry for LaTeX users is
+@article {Lei2024bioRxiv,
+	author = {Lei, Chon Lok and Clark, Alexander P. and Clerx, Michael and Wei, Siyu and Bloothooft, Meye and de Boer, Teun P. and Christini, David J. and Krogh-Madsen, Trine and Mirams, Gary R.},
+	title = {Resolving artefacts in voltage-clamp experiments with computational modelling: an application to fast sodium current recordings},
+	year = {2024},
+	doi = {10.1101/2024.07.23.604780},
+	URL = {https://www.biorxiv.org/content/early/2024/07/24/2024.07.23.604780},
+	eprint = {https://www.biorxiv.org/content/early/2024/07/24/2024.07.23.604780.full.pdf},
+	journal = {bioRxiv}
+}

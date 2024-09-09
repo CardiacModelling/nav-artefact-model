@@ -3,7 +3,7 @@
 This is a repository to reproduce results for the work "_Resolving artefacts in voltage-clamp experiments with computational modelling: an application to fast sodium current recordings_".
 
 ### Dependencies
-To run the code, run pip install -r requirements.txt to install all the necessary dependencies. Python >3.6 is required (tested on Python 3.11).
+To run the code, run pip install -r requirements.txt to install all the necessary dependencies. Python >3.6 is required (tested on Python 3.9 and 3.11).
 
 ### Content
 
@@ -25,3 +25,12 @@ To run the code, run pip install -r requirements.txt to install all the necessar
 - current in [pA]
 - capacitance in [pF]
 - resistance in [GOhm]
+
+
+### Acknowledging this work
+If you publish any work based on the contents of this repository please cite ([CITATION file](CITATION)):
+
+Chon Lok Lei, Alexander P. Clark, Michael Clerx, Siyu Wei, Meye Bloothooft, Teun P. de Boer, David J. Christini, Trine Krogh-Madsen, Gary R. Mirams.
+(2024).
+[Resolving artefacts in voltage-clamp experiments with computational modelling: an application to fast sodium current recordings](https://doi.org/10.1101/2024.07.23.604780).
+bioRxiv, 2024.07.23.604780.
