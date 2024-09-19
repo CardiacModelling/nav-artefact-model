@@ -81,11 +81,11 @@ axes[2, 1].legend(loc=4)
 
 axes[0, 1].set_xlim([9.1 - shiftx, 15 - shiftx])
 
-axes[0, 0].set_ylabel('Voltage (mV)', fontsize=12)
-axes[1, 0].set_ylabel('Current (pA)', fontsize=12)
-axes[2, 0].set_ylabel('Current (pA)', fontsize=12)
-axes[2, 0].set_xlabel('Time (ms)', fontsize=12)
-axes[2, 1].set_xlabel('Time (ms)', fontsize=12)
+axes[0, 0].set_ylabel('Voltage (mV)', fontsize=13)
+axes[1, 0].set_ylabel('Current (pA)', fontsize=13)
+axes[2, 0].set_ylabel('Current (pA)', fontsize=13)
+axes[2, 0].set_xlabel('Time (ms)', fontsize=13)
+axes[2, 1].set_xlabel('Time (ms)', fontsize=13)
 
 axes[0, 1].set_title('Simulations')
 axes[0, 0].set_title('Data')
