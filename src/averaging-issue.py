@@ -54,7 +54,7 @@ for ax, choice, alpha in zip(axes, [choice1, choice2, choice3], alphas):
     i = np.argmin(b)
     print('Physiological:', linregress(all_v[i+1:i+7], b[i+1:i+7]))
 
-    ax.set_xlabel('Voltage (mV)', fontsize=10)
+    ax.set_xlabel('Voltage (mV)', fontsize=12)
 
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
@@ -64,7 +64,7 @@ for i in [1, 2]:
     axes[i].axes.get_yaxis().set_visible(False)
     axes[i].spines['left'].set_visible(False)
 
-axes[0].set_ylabel('Current density (pA/pF)', fontsize=10)
+axes[0].set_ylabel('Current density (pA/pF)', fontsize=12)
 axes[-1].legend(loc=4, fontsize=10)
 axes[-1].set_xlim(-96, 59)
 

@@ -292,10 +292,10 @@ for i, alpha in enumerate([0, 20, 40, 60, 80]):
         axv2.axes.get_yaxis().set_visible(False); axv2.spines['left'].set_visible(False)
         axi2.axes.get_yaxis().set_visible(False); axi2.spines['left'].set_visible(False)
     else:
-        axv1.set_ylabel('Voltage (mV)')
-        axi1.set_ylabel('Current (pA)')
-        axv2.set_ylabel('Voltage (mV)')
-        axi2.set_ylabel('Current (pA)')
+        axv1.set_ylabel('Voltage (mV)', fontsize=12)
+        axi1.set_ylabel('Current (pA)', fontsize=12)
+        axv2.set_ylabel('Voltage (mV)', fontsize=12)
+        axi2.set_ylabel('Current (pA)', fontsize=12)
 
     axes_v1.append(axv1)
     axes_i1.append(axi1)
@@ -327,9 +327,9 @@ ax_iv_2.spines['top'].set_visible(False)
 ax_iv_2.spines['right'].set_visible(False)
 ax_iv_1.set_ylim([-40000, 1000])
 ax_iv_2.set_ylim([-40000, 1000])
-ax_iv_2.set_xlabel('Intended test-pulse voltage (mV)')
-ax_iv_1.set_ylabel('Data current (pA)')
-ax_iv_2.set_ylabel('Model current (pA)')
+ax_iv_2.set_xlabel('Intended test-pulse voltage (mV)', fontsize=12)
+ax_iv_1.set_ylabel('Data current (pA)', fontsize=12)
+ax_iv_2.set_ylabel('Model current (pA)', fontsize=12)
 fig.align_ylabels([ax_iv_1, ax_iv_2])
 fig.align_ylabels(axes_v1 + axes_i1 + axes_v2 + axes_i2)
 
@@ -342,7 +342,7 @@ axes_v1[0].text(-0.5, 1.3, 'iii', transform=axes_v1[0].transAxes,
 axes_v2[0].text(-0.5, 1.3, 'iv', transform=axes_v2[0].transAxes,
                 ha='center', va='center', fontsize=12, fontweight='bold')
 
-axes_i1[-1].legend(bbox_to_anchor=(0.85, 1.2), loc="lower right", ncol=3,
+axes_i1[-1].legend(bbox_to_anchor=(1.1, 1.2), loc="lower right", ncol=3,
                    bbox_transform=axes_v1[-1].transAxes)
 
 if ARROW:
@@ -358,7 +358,7 @@ if ARROW:
 
 # Colorbar
 fig.subplots_adjust(top=0.945)
-cbar_ax = fig.add_axes([0.085, 0.96, 0.885, 0.0325])
+cbar_ax = fig.add_axes([0.09, 0.96, 0.9, 0.0325])
 cmap = ListedColormap(colour_list)
 cbar = matplotlib.colorbar.ColorbarBase(cbar_ax, cmap=cmap,
                                         orientation='horizontal')
