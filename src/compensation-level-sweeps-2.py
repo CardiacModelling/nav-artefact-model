@@ -21,7 +21,7 @@ def main(model, data_file, g, meta):
     x.set_protocol(protocols.from_steps(p), dt=0.01)
     y.set_protocol(protocols.from_steps(p), dt=0.01)
 
-    data = np.loadtxt('data/' + data_file + '.csv', delimiter=',')
+    data = np.loadtxt('../data/hipsccm/' + data_file + '.csv', delimiter=',')
     w = int(2640/0.1), int(2660/0.1) #2649, 2655
     data = data[w[0]:w[1], :]
     data[:, 0] -= data[0, 0]

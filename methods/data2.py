@@ -7,26 +7,26 @@ import numpy as np
 from . import DIR_METHOD, models
 
 _cnames = {# ID, file_name
-    'cell1':'220128_006_ch2_csv',
-    'cell2':'220210_003_ch3_csv',
-    'cell3':'220314_001_ch1_csv',
-    'cell4':'220314_003_ch2_csv',
-    'cell5':'220314_004_ch2_csv',
-    'cell6':'nav_iv_and_inact/medium_res_data/220502_008_ch2',
-    'cell7':'nav_iv_and_inact/medium_res_data/220502_009_ch3',
-    'cell8':'nav_iv_and_inact/medium_res_data/220502_011_ch1',
-    'cell9':'nav_iv_and_inact/medium_res_data/220502_011_ch3',
-    'cell10':'nav_iv_and_inact/medium_res_data/220503_001_ch1',
-    'cell11':'nav_iv_and_inact/medium_res_data/220503_001_ch2',
-    'cell12':'nav_iv_and_inact/medium_res_data/220503_002_ch1',
-    'cell13':'nav_iv_and_inact/medium_res_data/220503_002_ch2',
-    'cell14':'nav_iv_and_inact/medium_res_data/220503_003_ch3',
-    'cell15':'nav_iv_and_inact/medium_res_data/220503_004_ch1',
-    'cell16':'nav_iv_and_inact/medium_res_data/220503_004_ch4',
-    'cell17':'nav_iv_and_inact/medium_res_data/220503_005_ch1',
-    'cell18':'nav_iv_and_inact/medium_res_data/220503_005_ch2',
-    'cell19':'nav_iv_and_inact/medium_res_data/220503_005_ch3',
-    'cell20':'nav_iv_and_inact/medium_res_data/220503_005_ch4',
+    'cell1':'batch1/220128_006_ch2_csv',
+    'cell2':'batch1/220210_003_ch3_csv',
+    'cell3':'batch1/220314_001_ch1_csv',
+    'cell4':'batch1/220314_003_ch2_csv',
+    'cell5':'batch1/220314_004_ch2_csv',
+    'cell6':'batch2/medium_res_data/220502_008_ch2',
+    'cell7':'batch2/medium_res_data/220502_009_ch3',
+    'cell8':'batch2/medium_res_data/220502_011_ch1',
+    'cell9':'batch2/medium_res_data/220502_011_ch3',
+    'cell10':'batch2/medium_res_data/220503_001_ch1',
+    'cell11':'batch2/medium_res_data/220503_001_ch2',
+    'cell12':'batch2/medium_res_data/220503_002_ch1',
+    'cell13':'batch2/medium_res_data/220503_002_ch2',
+    'cell14':'batch2/medium_res_data/220503_003_ch3',
+    'cell15':'batch2/medium_res_data/220503_004_ch1',
+    'cell16':'batch2/medium_res_data/220503_004_ch4',
+    'cell17':'batch2/medium_res_data/220503_005_ch1',
+    'cell18':'batch2/medium_res_data/220503_005_ch2',
+    'cell19':'batch2/medium_res_data/220503_005_ch3',
+    'cell20':'batch2/medium_res_data/220503_005_ch4',
 }
 
 _pnames = [f'NaIV_{j}C_{i}CP' for i in np.arange(0, 90, 20) for j in [25, 35]]
@@ -62,7 +62,7 @@ def _nainact(cell):
     return _nainact_steps
 
 
-DIR_DATA = f'{DIR_METHOD}/../data'
+DIR_DATA = f'{DIR_METHOD}/../data/nav'
 
 
 def data_sets(include_synth=True):

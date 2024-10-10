@@ -1,0 +1,4 @@
+# Voltage (mV) Duration (ms)
+-100 50
+ 50  20
+-100 50

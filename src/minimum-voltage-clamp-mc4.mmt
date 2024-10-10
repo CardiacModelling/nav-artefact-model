@@ -1,0 +1,149 @@
+[[model]]
+name: minimum_voltage_clamp_model
+display_name: Lei CL (thesis) 2020 Voltage clamp model
+mmt_authors: Chon Lok Lei, Michael Clerx
+version: 20230510
+desc: """
+    Voltage clamp model with standard compensation [1].
+    This version does not have Cprs and any (too) fast machine delay.
+
+    [1] Accounting for variability in ion current recordings using a
+        mathematical model of artefacts in voltage-clamp experiments.
+        Chon Lok Lei, Michael Clerx, Dominic G. Whittaker, David J. Gavaghan,
+        Teun P. de Boer, Gary R. Mirams.
+        Phil. Trans. R. Soc. A, 378: 20190348, 2020.
+        https://doi.org/10.1098/rsta.2019.0348
+
+    Units:
+    time in [ms]
+    voltage in [mV]
+    current in [pA]
+    capacitance in [pF]
+    resistance in [GOhm]
+"""
+mc.Ik = 0 [pA]
+membrane.V            = -100
+voltageclamp.V_est   = -100
+voltageclamp.Iout   = 0
+
+#
+# Simulator variables: To be replaced with model variables
+#
+[engine]
+time = 0 [ms]
+    in [ms]
+    bind time
+pace = 0
+    bind pace
+
+#
+# Cell size: To be replaced with model variable
+#
+[mc]
+use membrane.V
+dot(Ik) = gk * (dot(V) - Ik / ck)
+    in [pA]
+ck = 100. in [pF]  # for decay rate ~10 ms
+gk = 1e2 [pA/mV]  # in O(5000) pA range
+Im = gm * V in [pA]
+gm = 1e1 [pA/mV]  # in O(5000) pA range
+I = Ik + Im
+    desc: model cell current
+    in [pA]
+Cm = 44 [pF]
+    in [pF]
+    desc: Cell capacitance
+
+#
+# Membrane potential: To be replaced with model version, modified as shown
+# below.
+#
+[membrane]
+use voltageclamp.V_p, voltageclamp.R_series, voltageclamp.V_offset_eff
+use voltageclamp.I_leak
+use mc.Cm, mc.I
+dot(V) = (V_p + V_offset_eff - V) / (Cm * R_series) - (mc.I + I_leak) / Cm
+    desc: Membrane potential
+    in [mV]
+
+#
+# Voltage-clamp model
+#
+[voltageclamp]
+use mc.Cm
+use membrane.V
+Vc = engine.pace * 1 [mV]
+    desc: Command voltage
+    in [mV]
+Cm_est = 44 [pF]
+    desc: Estimated cell capacitance
+R_series = 30e-3 [GOhm]
+    in [GOhm]
+    desc: Series resistance (~MegaOhms)
+R_series_est = 30e-3 [GOhm]
+    desc: Estimated series resistance
+alpha_R = 0.7 [1]
+    in [1]
+    desc: Percentage Rs compensation
+alpha_P = 0.7 [1]
+    in [1]
+    desc: Percentage supercharging/voltage prediction
+C_prs = 0 [pF]
+    in [pF]
+    desc: 'Parasitic'/pipette capacitance at electrode
+C_prs_est = 0 [pF]
+    desc: Estimated 'parasitic'/pipette capacitance at electrode
+
+V_offset_eff = -1 [mV]
+    in [mV]
+    desc: Effective voltage offset
+
+V_p = Vc + (Iout * alpha_R + Cm_est * dot(V_est) * alpha_P) * R_series_est
+    desc: Clamp voltage
+    in [mV]
+
+tau_out = 110e-3 [ms]
+    in [ms]
+    desc: Feedback delay
+dot(Iout) = (I_in - Iout) / tau_out
+    in [pA]
+    desc: Measured current
+
+# Supercharging
+# From https://doi.org/10.1007/978-1-4419-1229-9_4 Fig. 18
+dot(V_est) = piecewise(
+    Cm_est < 1e-6, 0,
+    R_series_est < 1e-6, 0,
+    (Vc - V_est) / ((1 - alpha_P) * Cm_est * R_series_est)
+    )
+    in [mV]
+    desc: Supercharging voltage
+
+# Leak current, assumed to be linear
+g_leak = 0 [pA/mV]
+    in [1/GOhm]
+    desc: Leak conductance (thought as inverse of seal resistance)
+E_leak = 0 [mV]
+    in [mV]
+    desc: Leak reversal potential
+I_leak = g_leak * (V - E_leak)
+    in [pA]
+    desc: Leak current
+
+I_in = (
+        (V_p - V + V_offset_eff) / R_series
+        #+ C_prs * dot(V)
+        #- C_prs_est * dot(V_est)
+        - Cm_est * dot(V_est)
+    )
+    in [pA]
+
+# Leak subtracted (post-processed) current
+g_leak_est = 0 [pA/mV]
+    in [1/GOhm]
+    desc: Estimated leak conductance
+I_post = Iout - g_leak_est * (Vc - E_leak)
+    in [pA]
+    desc: Leak subtracted current
+    label measured_current
+
