@@ -3,7 +3,7 @@
 This is a repository to reproduce results for the work "_Resolving artefacts in voltage-clamp experiments with computational modelling: an application to fast sodium current recordings_".
 
 ### Dependencies
-To run the code, run pip install -r requirements.txt to install all the necessary dependencies. Python >3.6 is required (tested on Python 3.9 and 3.11).
+To run the code, run `pip install -r requirements.txt` to install all the necessary dependencies. Python >3.6 is required (tested on Python 3.9 and 3.11).
 
 ### Content
 
@@ -17,7 +17,9 @@ To run the code, run pip install -r requirements.txt to install all the necessar
 - `figure-plot-diff-models.py`: Produce figure for comparing two fitted models.
 
 ### Data source
-<https://app.box.com/folder/156288669561>
+Experimental data of this study may be downloaded from the following link:
+<https://doi.org/10.6084/m9.figshare.27193878>.
+The whole dataset should be placed within this repository as `data` such that data can be loaded and read properly.
 
 ### Units
 - time in [ms]
