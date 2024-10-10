@@ -7,7 +7,7 @@ To run the code, run `pip install -r requirements.txt` to install all the necess
 
 ### Content
 
-- `data`: Experimental data.
+- `data`: Experimental data (see below for how to download this).
 - `methods`: Main python codes.
 - `models`: Myokit models.
 - `protocols`: Voltage clamp protocols.
@@ -17,8 +17,8 @@ To run the code, run `pip install -r requirements.txt` to install all the necess
 - `figure-plot-diff-models.py`: Produce figure for comparing two fitted models.
 
 ### Data source
-Experimental data of this study may be downloaded from the following link:
-<https://doi.org/10.6084/m9.figshare.27193878>.
+Experimental data of this study may be downloaded from the following link: <https://doi.org/10.6084/m9.figshare.27193878>.
+
 The whole dataset should be placed within this repository as `data` such that data can be loaded and read properly.
 
 ### Units
