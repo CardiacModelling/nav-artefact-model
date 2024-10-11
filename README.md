@@ -6,12 +6,12 @@ This is a repository to reproduce results for the work "_Resolving artefacts in 
 To run the code, run `pip install -r requirements.txt` to install all the necessary dependencies. Python >3.6 is required (tested on Python 3.9 and 3.11).
 
 ### Reproducing result figures
-- Figure 2C: Change directory to `src` and run `$ python simulate-mc4auto-minimum.py nav`.
-- Figure 3C: Change directory to `src` and run `$ python compensation-level-sweeps.py`.
-- Figure 4C: Run `$ python figure-plot.py -m iyer -p NaIV_35C_80CP -d cell6 -l 90`.
-- Figure 5A: Change directory to `src` and run `$ python averaging-issue.py`.
+- Figure 2C: Change directory to `src` and run `python simulate-mc4auto-minimum.py nav`.
+- Figure 3C: Change directory to `src` and run `python compensation-level-sweeps.py`.
+- Figure 4C: Run `python figure-plot.py -m iyer -p NaIV_35C_80CP -d cell6 -l 90`.
+- Figure 5A: Change directory to `src` and run `python averaging-issue.py`.
 - Figure 5B: Change directory to `src` and run Jupyter notebook `mutant-issue.ipynb`.
-- Figure 6: Run `$ python figure-plot-diff-models.py -m gray -p NaIV_35C_80CP -d cell9 -l 90`.
+- Figure 6: Run `python figure-plot-diff-models.py -m gray -p NaIV_35C_80CP -d cell9 -l 90`.
 
 ### Content
 
