@@ -5,16 +5,22 @@ This is a repository to reproduce results for the work "_Resolving artefacts in 
 ### Dependencies
 To run the code, run `pip install -r requirements.txt` to install all the necessary dependencies. Python >3.6 is required (tested on Python 3.9 and 3.11).
 
+### Reproducing result figures
+- Figure 2C: Change directory to `src` and run `$ python simulate-mc4auto-minimum.py nav`.
+- Figure 3C: Change directory to `src` and run `$ python compensation-level-sweeps.py`.
+- Figure 4C: Run `$ python figure-plot.py -m iyer -p NaIV_35C_80CP -d cell6 -l 90`.
+- Figure 5A: Change directory to `src` and run `$ python averaging-issue.py`.
+- Figure 5B: Change directory to `src` and run Jupyter notebook `mutant-issue.ipynb`.
+- Figure 6: Run `$ python figure-plot-diff-models.py -m gray -p NaIV_35C_80CP -d cell9 -l 90`.
+
 ### Content
 
 - `data`: Experimental data (see below for how to download this).
 - `methods`: Main python codes.
 - `models`: Myokit models.
 - `protocols`: Voltage clamp protocols.
-- `src`: Other source code for exploring experimental artefact effects.
-- `fit.py`: Run model fitting.
-- `figure-plot.py`: Produce figure for fitted results.
-- `figure-plot-diff-models.py`: Produce figure for comparing two fitted models.
+- `src`: Other source code for studying experimental artefact effects.
+- `fit.py`: Run model fitting to produce results in `results`.
 
 ### Data source
 Experimental data of this study may be downloaded from the following link: <https://doi.org/10.6084/m9.figshare.27193878>.
