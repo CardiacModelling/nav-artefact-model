@@ -49,7 +49,7 @@ for ax, choice, alpha in zip(axes, [choice1, choice2, choice3], alphas):
         b = baseline_dat / np.max(np.abs(baseline_dat))
     else:
         b = baseline_dat
-    line2 = ax.plot(all_v, b, c=(.8, .1, .1), marker='o', label='Physiological')
+    line2 = ax.plot(all_v, b, c=(.8, .1, .1), marker='o', label='Physiological\n(theoretical)')
 
     i = np.argmin(b)
     print('Physiological:', linregress(all_v[i+1:i+7], b[i+1:i+7]))
