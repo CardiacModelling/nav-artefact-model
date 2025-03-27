@@ -258,8 +258,8 @@ for i, alpha in enumerate([0, 20, 40, 60, 80]):
     axv2.plot(tvm, vm[7], ls='--', c=c) # Voltage
 
     # Ideal
-    axi1.plot(ti, ci[5], ls=':', label='Physiological', c='#7f7f7f')
-    axi2.plot(ti, ci[7], ls=':', label='Physiological', c='#7f7f7f')
+    axi1.plot(ti, ci[5], ls=':', label='Physiological (theoretical)', c='#7f7f7f')
+    axi2.plot(ti, ci[7], ls=':', label='Physiological (theoretical)', c='#7f7f7f')
 
     # IV plot
     if has_data:
@@ -354,7 +354,7 @@ if ARROW:
     #    '', xy=(25, -35000), xytext=(-15, -2500),
     #    arrowprops=dict(arrowstyle='->', lw=2, color='C2', alpha=0.75)
     #)
-    ax_iv_2.text(22.5, -27500, 'Physiological', fontsize=12, ha='left')
+    ax_iv_2.text(22.5, -31500, 'Physiological\n(theoretical with\nno artifacts)', fontsize=12, ha='left')
 
 # Colorbar
 fig.subplots_adjust(top=0.945)
