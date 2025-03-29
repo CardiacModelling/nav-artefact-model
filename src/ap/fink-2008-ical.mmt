@@ -1,0 +1,90 @@
+[[model]]
+author: Chon Lok Lei
+name: Fink et al. 2008 ICaL
+# Initial values
+ical.d        = 5.06e-06
+ical.f        = 0.9999
+ical.f2       = 0.9995
+ical.fCass    = 1
+membrane.V                                          = -80
+
+[engine]
+time = 0 [ms]
+    in [ms]
+    bind time
+pace = 0
+    bind pace
+
+[membrane]
+i_ion = (
+    + ical.ICaL
+    )
+    in [pA]
+    label cellular_current
+dot(V) = (engine.pace * 1 [mV] - V) / 1e-6 [ms]
+    desc: Ideal-voltage-clamp membrane voltage (to be replaced)
+    label membrane_potential
+    in [mV]
+
+[cell]
+Cm = 60 [pF]
+    in [pF]
+    label membrane_capacitance
+
+#
+# L-type calcium current
+#
+[ical]
+use membrane.V
+Ca_ss = intracellular.Cai
+Ca_o = extracellular.Cao
+ICaL = g_CaL * d * f * f2 * fCass * 4 * (V - 15) * phys.F ^ 2 / (phys.R * phys.T) * (0.25 * Ca_ss * exp(2 * (V - 15) * phys.F / (phys.R * phys.T)) - Ca_o) / (exp(2 * (V - 15) * phys.F / (phys.R * phys.T)) - 1)
+    in [A/F]
+g_CaL = 2e-2 #2e-5 [L/F/ms]
+dot(d) = (d_inf - d) / tau_d
+    alpha_d = 1.4 / (1 + exp((-35 - V) / 13)) + 0.25
+    beta_d = 1.4 / (1 + exp((V + 5) / 5))
+    d_inf = 1 / (1 + exp((d_inf_shift - V) / 7.5))
+    d_inf_shift = 5
+    gamma_d = 1 / (1 + exp((50 - V) / 20))
+    tau_d = 1 * alpha_d * beta_d + gamma_d
+dot(f2) = (f2_inf - f2) / tau_f2
+    f2_inf = 0.75 / (1 + exp((V + 35) / 7)) + 0.25
+    tau_f2 = (562 * exp(-(V + 27) ^ 2 / 240) + 31 / (1 + exp((25 - V) / 10)) + 80 / (1 + exp((V + 30) / 10))) / 2
+dot(fCass) = (fCass_inf - fCass) / tau_fCass
+    fCass_inf = 0.4 / (1 + (Ca_ss / 0.05) ^ 2) + 0.6
+    tau_fCass = 80 / (1 + (Ca_ss / 0.05) ^ 2) + 2
+dot(f) = (f_inf - f) / tau_f
+    f_inf = 1 / (1 + exp((V + 20) / 7))
+    tau_f = (1102.5 * exp(-(V + 27) ^ 2 / 225) + 200 / (1 + exp((13 - V) / 10)) + 180 / (1 + exp((V + 30) / 10)) + 20) / 4
+
+[extracellular]
+ko = 5.4 [mM]
+    in [mM]
+    oxmeta: extracellular_potassium_concentration
+    label K_o
+Cao = 1.8 [mM]
+    in [mM]
+    label Ca_o
+
+[intracellular]
+ki = 130 [mM]
+    in [mM]
+    oxmeta: intracellular_potassium_concentration
+    label K_i
+Cai = 1e-5 [mM]
+    in [mM]
+    label Ca_i
+
+[phys]
+F = 96485 [C/mol]
+    in [C/mol]
+R = 8314 [mJ/mol/K]
+    in [mJ/mol/K]
+T = 310 [K]
+    in [K]
+
+[nernst]
+EK = phys.R * phys.T / phys.F * log(extracellular.ko / intracellular.ki)
+    in [mV]
+    oxmeta: potassium_reversal_potential

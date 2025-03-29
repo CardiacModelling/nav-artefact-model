@@ -1,0 +1,320 @@
+[[model]]
+name: iyer-2007-ina
+display_name: Iyer et al. 2007 INa
+version: 20220325
+mmt_authors: Chon Lok Lei and Myokit CellML 1 API
+desc: """
+    Myokit implementation of the fast sodium current in Iyer et al. 2007.
+    Modified from the CellML converted model of the Iyer et al. 2007 model.
+
+    Units:
+    time in [ms]
+    voltage in [mV]
+    current in [pA]
+    capacitance in [pF]
+    resistance in [GOhm]
+"""
+# Initial values
+membrane.V                                          = -100
+ina.na1                                             =  1.11284526171411005e-1
+ina.na2                                             =  4.81019786429977003e-2
+ina.na3                                             =  7.79692701457914989e-3
+ina.na4                                             =  5.61699600929369013e-4
+ina.na5                                             =  1.51746424723121006e-5
+ina.na6                                             =  1.02118700961582996e-7
+ina.na7                                             =  1.93499158844817005e-8
+ina.na8                                             =  3.68582741846592010e-1
+ina.na9                                             =  3.12463212648791011e-1
+ina.na10                                            =  9.93398770493614941e-2
+ina.na11                                            =  1.40431688972266992e-2
+ina.na12                                            =  7.50073829883749041e-4
+ina.na13                                            =  3.70604970714328991e-2
+
+
+[engine]
+time = 0 [ms]
+    in [ms]
+    bind time
+pace = 0
+    bind pace
+
+[membrane]
+i_ion = (
+    + ina.INa
+    )
+    in [pA]
+    label cellular_current
+dot(V) = (engine.pace * 1 [mV] - V) / 1e-6 [ms]
+    desc: Ideal-voltage-clamp membrane voltage (to be replaced)
+    label membrane_potential
+    in [mV]
+
+[ina]
+INa = GNa * (na6 + na7) * (membrane.V - erev.E_Na)
+    in [A/F]
+    oxmeta: membrane_fast_sodium_current
+    label I_Na
+#GNa = 56.32 [mS/uF]
+#GNa = 600 [pA/mV]
+GNa = 2000 [pA/mV]
+    in [mS/uF]
+    oxmeta: membrane_fast_sodium_current_conductance
+    label g_Na
+Cf = Temp_Scale * KToverH * exp(- 5.95652236284583996e4 [g*m^2/s^2/mol (1000)] / RTNa + 0.00711 [J/mol/K] / phys.R)
+    in [mS/uF]
+Cn = Temp_Scale * KToverH * exp(- 2.87913446530952991e5 [g*m^2/s^2/mol (1000)] / RTNa + 786.217 [J/mol/K] / phys.R)
+    in [mS/uF]
+Delta1 = Temp_Scale * KToverH * exp( (- 1.33689930409099994e5 [g*m^2/s^2/mol (1000)] / RTNa + 229.205 [J/mol/K] / phys.R) * sd1 + (- 1.55804214553883003 * membrane.V / RTNaF) * sd2 )
+    in [mS/uF]
+sd1 = 1
+    label k_Na_9
+sd2 = 1
+    label k_Na_10
+DeltaDelta = Temp_Scale * KToverH * exp(- 5.57006624658306973e4 [g*m^2/s^2/mol (1000)] / RTNa + -130.639 [J/mol/K] / phys.R + - 3.64981672927078016 * membrane.V / RTNaF)
+    in [mS/uF]
+FoverRT = 1 / phys.RTF
+    in [1/mV]
+GammaGamma = Temp_Scale * KToverH * exp( 1.16431142142348006e5 [g*m^2/s^2/mol (1000)] / RTNa + -578.317 [J/mol/K] / phys.R +  7.64126011745707046e-1 * membrane.V / RTNaF)
+    in [mS/uF]
+KToverH = 1.381e-23 [g*m^2/s^2/K (1000)] * TNa / 6.626e-31 [g*m^2/s]
+    in [mS/uF]
+Of = Temp_Scale * KToverH * exp( (- 9.76578497137014929e4 [g*m^2/s^2/mol (1000)] / RTNa + 1.51 [J/mol/K] / phys.R) * sof1 + ( 6.84861993100684963e-2 * membrane.V / RTNaF) * sof2)
+    in [mS/uF]
+sof1 = 1
+    label k_Na_16
+sof2 = 1
+    label k_Na_17
+On = Temp_Scale * KToverH * exp( (- 6.21230784380480982e4 [g*m^2/s^2/mol (1000)] / RTNa + 39.295 [J/mol/K] / phys.R) * son1 + ( 2.88816042743232027e-1 * membrane.V / RTNaF) * son2)
+    in [mS/uF]
+son1 = 1
+    label k_Na_18
+son2 = 1
+    label k_Na_19
+RTNa = phys.R * TNa
+    in [g*m^2/s^2/mol (1000)]
+RTNaF = phys.R * TNa / phys.F
+    in [mV]
+#TNa = phys.T
+TNa = 294.16 [K]
+    in [K]
+Temp_Scale =  1.38862291252870995 * sts
+    in [1]
+sts = 1
+    label k_Na_20
+alpha1 = Temp_Scale * KToverH * exp( (- 1.14007462700232005e5 [g*m^2/s^2/mol (1000)] / RTNa + 224.114 [J/mol/K] / phys.R) * sa1 +  (2.86374268596234993e-1 * membrane.V / RTNaF) * sa2)
+    in [mS/uF]
+sa1 = 1
+    label k_Na_2
+sa2 = 1
+    label k_Na_3
+beta1 = Temp_Scale * KToverH * exp( (- 2.72470273489681014e5 [g*m^2/s^2/mol (1000)] / RTNa + 708.146 [J/mol/K] / phys.R) * sb1 + (- 2.28528417586423993 * membrane.V / RTNaF) * sb2)
+    in [mS/uF]
+sb1 = 1
+    label k_Na_4
+sb2 = 1
+    label k_Na_5
+epsilon = Temp_Scale * KToverH * exp( (- 8.58003675578325929e4 [g*m^2/s^2/mol (1000)] / RTNa + 70.078 [J/mol/K] / phys.R) * se1 )
+    in [mS/uF]
+se1 = 1
+    label k_Na_6
+gamma1 = Temp_Scale * KToverH * exp( (- 1.96336575735922990e5 [g*m^2/s^2/mol (1000)] / RTNa + 529.952 [J/mol/K] / phys.R) * sg1 + ( 2.78084918596045005 * membrane.V / RTNaF) * sg2 )
+    in [mS/uF]
+sg1 = 1
+    label k_Na_7
+sg2 = 1
+    label k_Na_8
+k1011 = k34 * parameter_a
+    in [mS/uF]
+k103 = k92 / parameter_a
+    in [mS/uF]
+k109 = k32 / parameter_a
+    in [mS/uF]
+k1110 = k43 / parameter_a
+    in [mS/uF]
+k1112 = k45 * parameter_a
+    in [mS/uF]
+k114 = k103 / parameter_a
+    in [mS/uF]
+k12 = 4 * alpha1
+    in [mS/uF]
+k1211 = k54 / parameter_a
+    in [mS/uF]
+k1213 = GammaGamma
+    in [mS/uF]
+k125 = k114 / parameter_a
+    in [mS/uF]
+k1312 = DeltaDelta
+    in [mS/uF]
+k136 = Of
+    in [mS/uF]
+k18 = Cn
+    in [mS/uF]
+k21 = beta1
+    in [mS/uF]
+k23 = 3 * alpha1
+    in [mS/uF]
+k29 = k18 * parameter_a
+    in [mS/uF]
+k310 = k29 * parameter_a
+    in [mS/uF]
+k32 = 2 * beta1
+    in [mS/uF]
+k34 = 2 * alpha1
+    in [mS/uF]
+k411 = k310 * parameter_a
+    in [mS/uF]
+k43 = 3 * beta1
+    in [mS/uF]
+k45 = alpha1
+    in [mS/uF]
+k512 = k411 * parameter_a
+    in [mS/uF]
+k54 = 4 * beta1
+    in [mS/uF]
+k56 = gamma1
+    in [mS/uF]
+k57 = rho
+    in [mS/uF]
+k613 = On
+    in [mS/uF]
+k65 = Delta1
+    in [mS/uF]
+k67 = epsilon
+    in [mS/uF]
+k75 = mu
+    in [mS/uF]
+k76 = omega_na
+    in [mS/uF]
+k81 = Cf
+    in [mS/uF]
+k89 = k12 * parameter_a
+    in [mS/uF]
+k910 = k23 * parameter_a
+    in [mS/uF]
+k92 = k81 / parameter_a
+    in [mS/uF]
+k98 = k21 / parameter_a
+    in [mS/uF]
+mu = Temp_Scale * KToverH * exp( (- 1.21322143275241993e5 [g*m^2/s^2/mol (1000)] / RTNa + 193.265 [J/mol/K] / phys.R) * sm1 + (- 1.74290267020903000 * membrane.V / RTNaF) * sm2 )
+    in [mS/uF]
+sm1 = 1
+    label k_Na_14
+sm2 = 1
+    label k_Na_15
+dot(na1) = -(k18 + k12) * na1 + k21 * na2 + k81 * na8
+    in [1]
+dot(na10) = k310 * na3 + k910 * na9 - (k1011 + k103 + k109) * na10 + k1110 * na11
+    in [1]
+dot(na11) = k411 * na4 + k1011 * na10 - (k1110 + k114 + k1112) * na11 + k1211 * na12
+    in [1]
+dot(na12) = k512 * na5 + k1112 * na11 - (k1211 + k125 + k1213) * na12 + k1312 * na13
+    in [1]
+dot(na13) = k613 * na6 + k1213 * na12 - (k1312 + k136) * na13
+    in [1]
+dot(na2) = k12 * na1 - (k21 + k23 + k29) * na2 + k32 * na3 + k92 * na9
+    in [1]
+dot(na3) = k23 * na2 - (k32 + k34 + k310) * na3 + k43 * na4 + k103 * na10
+    in [1]
+dot(na4) = k34 * na3 - (k43 + k45 + k411) * na4 + k54 * na5 + k114 * na11
+    in [1]
+dot(na5) = k45 * na4 - (k54 + k56 + k57 + k512) * na5 + k65 * na6 + k75 * na7 + k125 * na12
+    in [1]
+dot(na6) = k56 * na5 - (k65 + k67 + k613) * na6 + k76 * na7 + k136 * na13
+    in [1]
+dot(na7) = k57 * na5 + k67 * na6 - (k75 + k76) * na7
+    in [1]
+dot(na8) = k18 * na1 - (k81 + k89) * na8 + k98 * na9
+    in [1]
+dot(na9) = k29 * na2 + k89 * na8 - (k98 + k92 + k910) * na9 + k109 * na10
+    in [1]
+omega_na = Temp_Scale * KToverH * exp( (- 1.21955166154863997e5 [g*m^2/s^2/mol (1000)] / RTNa + 225.175 [J/mol/K] / phys.R) * so1 )
+    in [mS/uF]
+so1 = 1
+    label k_Na_11
+parameter_a =  1.40042625477401006 * s_parameter_a
+    in [1]
+s_parameter_a = 1
+    label k_Na_1
+rho = Temp_Scale * KToverH * exp( (- 1.47813990005035012e5 [g*m^2/s^2/mol (1000)] / RTNa + 338.915 [J/mol/K] / phys.R) * sr1 + ( 2.13600437021259992 * membrane.V / RTNaF) * sr2 )
+    in [mS/uF]
+sr1 = 1
+    label k_Na_12
+sr2 = 1
+    label k_Na_13
+#n_param = 1
+#n_param = 11
+n_param = 20
+    label k_Na_n
+
+
+#
+# Cell size
+#
+[cell]
+Cm = 60 [pF]
+    in [pF]
+    label membrane_capacitance
+
+#
+# Physical constants
+#
+[phys]
+T = 310 [K]
+#T = 295 [K]
+    in [K]
+R = 8.314472 [J / mol / K]
+    in [J / mol / K]
+F = 96.4853415 [C / mmol]
+    in [C / mmol]
+RTF = R * T / F
+    in [mV]
+
+#
+# Cai (millimolar)
+#
+[cai]
+Cai = 1e-5 [mM]
+    in [mM]
+    label Ca_i
+
+#
+# Nai (millimolar) (in sodium_dynamics)
+#
+[nai]
+Nai = 10 [mM]
+    in [mM]
+    label Na_i
+
+#
+# Ki (millimolar) (in potatssium_dynamics)
+#
+[ki]
+Ki = 110 [mM]
+    in [mM]
+    label K_i
+
+#
+# External concentrations
+#
+[extra]
+Ko = 5.4 [mM]
+    in [mM]
+    label K_o
+Cao = 1.8 [mM]
+    in [mM]
+    label Ca_o
+Nao = 140 [mM]
+    in [mM]
+    label Na_o
+
+#
+# Reversal potentials
+#
+[erev]
+use phys.RTF
+E_Ca = 0.5 * RTF * log(extra.Cao / cai.Cai)
+    in [mV]
+E_Na = RTF * log(extra.Nao / nai.Nai)
+    in [mV]
+E_K = RTF * log(extra.Ko / ki.Ki)
+    in [mV]

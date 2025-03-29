@@ -1,0 +1,180 @@
+[[model]]
+name: voltage_clamp_model
+display_name: Lei et al., Voltage clamp model
+mmt_authors: Chon Lok Lei, Michael Clerx
+version: 20250329
+desc: """
+    Voltage clamp model with standard compensation.
+
+    Units:
+    time in [ms]
+    voltage in [mV]
+    current in [pA]
+    capacitance in [pF]
+    resistance in [GOhm]
+"""
+membrane.V            = -80
+voltage_clamp.V_clamp = -80
+voltage_clamp.V_p     = -80
+voltage_clamp.V_est   = -80
+voltage_clamp.I_out   =  0
+voltage_clamp.I_in_p  = 0
+
+
+#
+# Simulator variables: To be replaced with model variables
+#
+[engine]
+time = 0 [ms]
+    in [ms]
+    bind time
+pace = 0
+    bind pace
+
+#
+# Cell size: To be replaced with model variable
+#
+[cell]
+Cm = 60 [pF]
+    in [pF]
+    desc: Cell capacitance
+
+#
+# Membrane potential: To be replaced with model version, modified as shown
+# below.
+#
+[membrane]
+use voltage_clamp.V_p, voltage_clamp.R_series, voltage_clamp.V_offset_eff
+use voltage_clamp.I_leak
+use cell.Cm
+I_ion = 0
+    in [pF]
+dot(V) = (V_p + V_offset_eff - V) / (Cm * R_series) - (I_ion + I_leak) / Cm
+    desc: Membrane potential
+    in [mV]
+
+#
+# Voltage-clamp model
+#
+[voltage_clamp]
+use cell.Cm
+use membrane.V
+V_c = engine.pace * 1 [mV]
+    desc: Command voltage
+    in [mV]
+    label: command_voltage
+Cm_est = 25 [pF]
+    in [pF]
+    desc: Estimated cell capacitance
+
+R_series_MOhm = 30 [MOhm]
+    in [MOhm]
+    desc: Series resistance
+R_series_est_MOhm = 25 [MOhm]
+    in [MOhm]
+    desc: Estimated series resistance
+R_series = R_series_MOhm * 1e-3 [GOhm/MOhm]
+    in [GOhm]
+    desc: Series resistance, converted to GOhm
+R_series_est = R_series_est_MOhm * 1e-3 [GOhm/MOhm]
+    in [GOhm]
+    desc: Estimated series resistance, converted to GOhm
+
+
+alpha_R_percentage = 0
+    desc: Percentage series resistance compensation
+alpha_R = alpha_R_percentage / 100
+    desc: Compensation, converted to a fraction
+alpha_P_percentage = 0
+    desc: Percentage prediction / supercharging
+alpha_P = alpha_P_percentage / 100
+    desc: Compensation, converted to a fraction
+
+
+C_prs = 0 [pF]
+    in [pF]
+    desc: 'Parasitic'/pipette capacitance at electrode
+C_prs_est = 4 [pF]
+    in [pF]
+    desc: Estimated 'parasitic'/pipette capacitance at electrode
+
+V_offset_eff = -1 [mV]
+    in [mV]
+    desc: Effective voltage offset
+
+tau_sum = 70e-3 [ms]
+    in [ms]
+    desc: Summation delay (approximately 5--70 us)
+dot(V_clamp) = (V_c + (I_in_p * alpha_R + Cm_est * dot(V_est) * alpha_P) * R_series_est - V_clamp) / tau_sum
+    desc: Clamp voltage
+    in [mV]
+
+tau_rs = 100e-3 [ms]
+    in [ms]
+    desc: Rs compensation speed
+dot(I_in_p) = (I_in - I_in_p) / tau_rs
+    in [pA]
+
+tau_clamp = 0.8e-3 [ms]
+    in [ms]
+    desc: Clamp delay
+dot(V_p) = (V_clamp - V_p) / tau_clamp
+    in [mV]
+    desc: Pipette voltage
+
+tau_out = 7.5e-3 [ms]
+    in [ms]
+    desc: Feedback delay
+dot(I_out) = (I_in - I_out) / tau_out
+    in [pA]
+    desc: Measured current
+
+# Supercharging
+dot(V_est) = if(
+        Cm_est < 1e-6 [pF] or R_series_est < 1e-6 [GOhm],
+        0 [mV/ms],
+        (V_c - V_est) / ((1 - alpha_P) * Cm_est * R_series_est)
+    )
+    in [mV]
+    desc: Supercharging voltage
+
+# Leak current, assumed to be linear (caused by the imperfect seal)
+R_seal_MOhm = 500 [MOhm]
+    in [MOhm]
+    desc: Seal resistance
+g_leak = 1 / (R_seal_MOhm * 1e-3 [GOhm/MOhm])
+    in [1/GOhm]
+    desc: Leak conductance (thought as inverse of seal resistance)
+E_leak = -80 [mV]
+    in [mV]
+    desc: Leak reversal potential
+I_leak = g_leak * (V - E_leak)
+    in [pA]
+    desc: Leak current
+
+I_in = (
+        (V_p - V + V_offset_eff) / R_series
+        + C_prs * dot(V_p)
+        - C_prs_est * dot(V_clamp)
+        - Cm_est * dot(V_est)
+    )
+    in [pA]
+
+# Leak subtracted (post-processed) current
+R_seal_est_MOhm = 1000 [MOhm]
+    in [MOhm]
+    desc: Estimeated seal resistance
+g_leak_est = if(
+    R_seal_est_MOhm < 1e-6,
+    0 [GOhm/MOhm],
+    1 / (R_seal_est_MOhm * 1e-3 [GOhm/MOhm])
+    )
+    in [nS]
+    desc: Estimated leak conductance
+E_leak_est = -80 [mV]
+    in [mV]
+    desc: Estimated leak reversal potential
+I_post = I_out - g_leak_est * (V_c - E_leak_est)
+    in [pA]
+    desc: Leak subtracted current
+    label measured_current
