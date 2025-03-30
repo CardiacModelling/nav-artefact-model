@@ -51,12 +51,12 @@ dot(V) = (engine.pace * 1 [mV] - V) / 1e-6 [ms]
 
 [ina]
 INa = GNa * (na6 + na7) * (membrane.V - erev.E_Na)
-    in [A/F]
+    in [pA]
     oxmeta: membrane_fast_sodium_current
     label I_Na
-#GNa = 56.32 [mS/uF]
-#GNa = 600 [pA/mV]
-GNa = 2000 [pA/mV]
+#GNa = 56.32 [mS/uF] # for A/F
+#GNa = 600 [pA/mV] # for pA
+GNa = 2000 [pA/mV] # for pA
     in [mS/uF]
     oxmeta: membrane_fast_sodium_current_conductance
     label g_Na

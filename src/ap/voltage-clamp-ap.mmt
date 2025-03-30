@@ -47,7 +47,11 @@ Cm = 60 [pF]
 use voltage_clamp.V_p, voltage_clamp.R_series, voltage_clamp.V_offset_eff
 use voltage_clamp.I_leak
 use cell.Cm
-I_ion = 0
+I_ion2s = 0
+    in [pF]
+I_ion_scale = 1
+    in [1]
+I_ion = I_ion_scale * I_ion2s
     in [pF]
 dot(V) = (V_p + V_offset_eff - V) / (Cm * R_series) - (I_ion + I_leak) / Cm
     desc: Membrane potential
