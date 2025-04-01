@@ -3,7 +3,7 @@
 This is a repository to reproduce results for the work "_Resolving artefacts in voltage-clamp experiments with computational modelling: an application to fast sodium current recordings_".
 
 ### Dependencies
-To run the code, run `pip install -r requirements.txt` to install all the necessary dependencies. Python >3.6 is required (tested on Python 3.9 and 3.11).
+To run the code, run `pip install -r requirements.txt` to install all the necessary dependencies. Python >3.6 and SUNDIALS are required (tested on Python 3.9 and 3.11, and SUNDIALS 7.2.1).
 
 ### Reproducing result figures
 - Figure 3C: Change directory to `src` and run `python simulate-mc4auto-minimum.py nav`.
