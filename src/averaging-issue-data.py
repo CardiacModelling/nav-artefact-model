@@ -4,7 +4,6 @@ import numpy as np
 from scipy.stats import qmc
 from scipy.signal import find_peaks
 import pandas as pd
-from multiprocessing import Pool
 import myokit
 
 '''
@@ -12,6 +11,8 @@ This script generates simulated data for the INa model using Latin Hypercube
 sampling to demonstrate averaging IV curve issues.
 '''
 
+MULTIPROCESSING = False
+CM = False
 
 def lhs_array(min_val, max_val, n, log=False):
     sampler = qmc.LatinHypercube(1)
@@ -70,7 +71,7 @@ def get_iv_data(mod, dat, times):
 
 def mod_sim(param_vals):
     proto = myokit.Protocol()
-    for v in range(-90, 50, 2):
+    for v in range(-90, 50, 5):
         proto.add_step(-100, 2000)
         proto.add_step(v, 20)
     gna, rs, cm = param_vals
@@ -90,10 +91,22 @@ def mod_sim(param_vals):
 
 def generate_dat(num_mods=5):
     gna_vals = lhs_array(.2, 5, n=num_mods, log=True)
-    rs_vals = lhs_array(4E-3, 15E-3, n=num_mods)
-    cm_vals = lhs_array(8, 22, n=num_mods)
-    with Pool() as p:
-        dat = p.map(mod_sim, np.array([gna_vals, rs_vals, cm_vals]).transpose())
+    if CM:
+        rs_vals = lhs_array(2E-3, 5E-3, n=num_mods)
+        cm_vals = lhs_array(50, 150, n=num_mods)
+    else:
+        rs_vals = lhs_array(4E-3, 15E-3, n=num_mods)
+        cm_vals = lhs_array(8, 22, n=num_mods)
+    vals = np.array([gna_vals, rs_vals, cm_vals]).transpose()
+    if MULTIPROCESSING:
+        from multiprocessing import Pool
+        with Pool() as p:
+            dat = p.map(mod_sim, vals)
+    else:
+        dat = []
+        for i, p in enumerate(vals):
+            print(i, p)
+            dat.append(mod_sim(p))
     all_currents = []
     all_meta = []
     for curr_mod in dat:
