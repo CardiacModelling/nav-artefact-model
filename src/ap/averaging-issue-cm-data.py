@@ -12,6 +12,12 @@ sampling to demonstrate averaging IV curve issues.
 '''
 
 MULTIPROCESSING = False
+CASE = 1
+
+# Cases 1 to 5; Rs lower and upper bounds in MOhm
+CASES = {1: (0.5, 2),
+         2: (2, 5),
+         3: (5, 10)}
 
 def lhs_array(min_val, max_val, n, log=False):
     sampler = qmc.LatinHypercube(1)
@@ -90,8 +96,9 @@ def mod_sim(param_vals):
 
 def generate_dat(num_mods=5):
     gna_vals = lhs_array(.2, 5, n=num_mods, log=True)
-    rs_vals = lhs_array(4E-3, 15E-3, n=num_mods)
-    cm_vals = lhs_array(8, 22, n=num_mods)
+    rslb, rsub = CASES[CASE] # MOhm
+    rs_vals = lhs_array(rslb*1E-3, rsub*1E-3, n=num_mods) # GOhm
+    cm_vals = lhs_array(50, 150, n=num_mods)
     vals = np.array([gna_vals, rs_vals, cm_vals]).transpose()
     if MULTIPROCESSING:
         from multiprocessing import Pool
@@ -109,12 +116,12 @@ def generate_dat(num_mods=5):
         all_meta.append(curr_mod[1])
     all_sim_dat = pd.DataFrame(all_currents, columns=dat[0][0]['Voltage'])
     mod_meta = pd.DataFrame(all_meta, columns=['G_Na', 'Rs', 'Cm'])
-    all_sim_dat.to_csv('./data/mod_simulations-fig2/all_iv.csv', index=False)
-    mod_meta.to_csv('./data/mod_simulations-fig2/all_param.csv', index=False)
+    all_sim_dat.to_csv(f'./data/case-{CASE}/all_iv.csv', index=False)
+    mod_meta.to_csv(f'./data/case-{CASE}/all_param.csv', index=False)
 
 
 def main():
-    generate_dat(150)
+    generate_dat(25)
 
 
 if __name__ == '__main__':
