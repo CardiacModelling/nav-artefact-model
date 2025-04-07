@@ -106,7 +106,7 @@ pace = 0 bind pace
 # Page 5 of the appendix to [2]
 #
 [membrane]
-dot(V) = -(i_ion + stimulus.i_stim)
+dot(V) = -(i_ion + stimulus.i_stim + i_diff)
     label membrane_potential
     in [mV]
 i_ion = (
@@ -119,6 +119,8 @@ i_ion = (
         )
     label cellular_current
     in [A/F]
+i_diff = 0 bind diffusion_current
+    desc: Current to neighbouring cells, defined outward.
 
 #
 # Stimulus current
