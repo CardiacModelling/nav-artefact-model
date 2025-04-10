@@ -1,0 +1,224 @@
+[[model]]
+name: hh-ina
+display_name: Gray and Franz 2020 INa
+version: 20220524
+mmt_authors: Chon Lok Lei
+desc: """
+    Myokit implementation of the fast sodium current in Gray and Franz 2020.
+
+    Units:
+    time in [ms]
+    voltage in [mV]
+    current in [pA]
+    capacitance in [pF]
+    resistance in [GOhm]
+"""
+# Initial conditions
+Membrane.V = -100
+INa.m      =  0.01
+INa.h      =  0.8
+voltageclamp.Vclamp = -80.0 [mV]
+voltageclamp.Vp = -80.0 [mV]
+voltageclamp.Vest = -80.0 [mV]
+voltageclamp.Iout = 0.0 [mV]
+
+[engine]
+time = 0 [ms]
+    in [ms]
+    bind time
+pace = 0
+    bind pace
+
+[Membrane]
+use voltageclamp.Vp, voltageclamp.rseries, voltageclamp.voffset_eff, model_parameters.Cm
+i_ion = INa.INa
+i_ion_star = i_ion * Cm + voltageclamp.ILeak
+dot(V) = (Vp - V + voffset_eff) / tau - i_ion_star / Cm
+    tau = Cm * rseries in [ms]
+    desc: membrane potential
+    in [mV]
+
+[voltageclamp]
+use Membrane.V, model_parameters.Cm
+# Parameters
+rseries = 20 * 1e-3 [GR]  # in order of MegaOhms; TODO: fit
+cprs = 4.0 [pF]  # Unknown value for 'parasitic' capacitance at electrode...
+cprs_est = 4.0 [pF]  # eff. parasitic capacitance at electrode; TODO: fit
+voffset_eff = -3 [mV]  # TODO: fit
+rseries_est = 20 * 1e-3 [GR]  # TODO: later this one use measured value
+cm_est = 60 [pF]  # TODO: similar to rseries_est, set value
+alpha_c = 0.7 [1]  # NOTE: percentage of compensation, this is included in rseries_est already
+alpha_p = 0.7 [1]  # NOTE: percentage of compensation, this is included in rseries_est already
+
+# Command voltage
+Vc = engine.pace
+    desc: command voltage
+    in [mV]
+
+# Rs compensation and summing delay
+tau_sum = 40e-3 in [ms]  # electronic delay term, ~ 5 - 70 microsecond
+Vc_prime = (Vc + alpha_c*rseries_est*Iout + alpha_p*rseries_est*cm_est*dVestdt)
+dVclampdt = (Vc_prime - Vclamp) / tau_sum
+    in [mV/ms]
+dot(Vclamp) = dVclampdt
+    desc: clamp voltage
+    in [mV]
+
+# Supercharging
+dVestdt = piecewise(
+    cm_est < 1e-6, 0,
+    rseries_est < 1e-6, 0,
+    (Vc - Vest) / ((1 - alpha_p) * cm_est * rseries_est)
+) in [mV/ms]
+dot(Vest) = dVestdt
+    in [mV]
+
+# Amplifier delay
+tau_clamp = 0.8 * 1e-3 in [ms]
+dVpdt = (Vclamp - Vp) / tau_clamp in [mV/ms]
+dot(Vp) = dVpdt
+    desc: pipette voltage
+    in [mV]
+
+# Feedback delay
+dot(Iout) = (Iin - Iout) / tau
+    tau = 7.5 * 1e-3 in [ms]
+    desc: measured current
+    in [pA]
+
+Iin = (
+        (Vp - V + voffset_eff) / rseries
+        + cprs * dVpdt
+        - cprs_est * dVclampdt
+        - cm_est * if(rseries_est < 1e-6, dVclampdt, dVestdt)
+    )
+    in [pA]
+
+## assume linear leak residual
+gLeak = 1 [pA/mV]
+ELeak = 0 [mV]
+ILeak = gLeak * (V - ELeak) in [pA]
+
+#
+# Sodium Current (INa)
+# Parameters from: https://doi.org/10.1152/ajpheart.00557.2019
+#
+[INa]
+use Membrane.V
+GNa = 20 [nS/pF]
+    in [nS]
+    label g_Na
+Em = -41.0 + p1
+    in [mV]
+p1 = 0 [mV]
+    label k_Na_1
+km = -4.0 + p2
+    in [mV]
+p2 = 0 [mV]
+    label k_Na_2
+taum = 0.12 [ms]
+    in [ms]
+    label k_Na_3
+Eh = -74.7 + p3
+    in [mV]
+p3 = 0 [mV]
+    label k_Na_4
+kh = 4.4 + p4
+    in [mV]
+p4 = 0 [mV]
+    label k_Na_5
+tauh = 6.45 [ms]
+    in [ms]
+    label k_Na_6
+deltah = 0.755
+    label k_Na_7
+n_param = 7
+    label k_Na_n
+dot(m) = (inf - m) / tau
+    desc: activation in i_Na
+    b = exp((V - Em) / km)
+    inf = 1 / (1 + b)
+    tau = taum
+        in [ms]
+dot(h) = (inf - h) / tau
+    desc: inactivation in i_Na
+    b = exp((V - Eh) / kh)
+    inf = 1 / (1 + b)
+    tau = 2 * tauh * exp(deltah * (V - Eh) / kh) / (1 + b)
+        in [ms]
+g_Na_scale = 1
+INa = GNa * g_Na_scale * m^3 * h * (V - erev.E_Na)
+    in [A/F]
+    label I_Na
+
+#
+# Cell size
+#
+[model_parameters]
+Cm = 60 [pF]
+    in [pF]
+    label membrane_capacitance
+
+#
+# Physical constants
+#
+[phys]
+T = 310 [K]
+#T = 295 [K]
+    in [K]
+R = 8.314472 [J / mol / K]
+    in [J / mol / K]
+F = 96.4853415 [C / mmol]
+    in [C / mmol]
+RTF = R * T / F
+    in [mV]
+
+#
+# Cai (millimolar)
+#
+[cai]
+Cai = 1e-5 [mM]
+    in [mM]
+    label Ca_i
+
+#
+# Nai (millimolar) (in sodium_dynamics)
+#
+[nai]
+Nai = 10 [mM]
+    in [mM]
+    label Na_i
+
+#
+# Ki (millimolar) (in potatssium_dynamics)
+#
+[ki]
+Ki = 110 [mM]
+    in [mM]
+    label K_i
+
+#
+# External concentrations
+#
+[extra]
+Ko = 5.4 [mM]
+    in [mM]
+    label K_o
+Cao = 1.8 [mM]
+    in [mM]
+    label Ca_o
+Nao = 140 [mM]
+    in [mM]
+    label Na_o
+
+#
+# Reversal potentials
+#
+[erev]
+use phys.RTF
+E_Ca = 0.5 * RTF * log(extra.Cao / cai.Cai)
+    in [mV]
+E_Na = RTF * log(extra.Nao / nai.Nai)
+    in [mV]
+E_K = RTF * log(extra.Ko / ki.Ki)
+    in [mV]

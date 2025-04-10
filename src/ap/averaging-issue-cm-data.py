@@ -12,7 +12,7 @@ sampling to demonstrate averaging IV curve issues.
 '''
 
 MULTIPROCESSING = False
-CASE = 1
+CASE = 3
 
 # Cases 1 to 5; Rs lower and upper bounds in MOhm
 CASES = {1: (0.5, 2),
@@ -81,7 +81,7 @@ def mod_sim(param_vals):
         proto.add_step(v, 20)
     gna, rs, cm = param_vals
     comp = .8
-    mod = myokit.load_model('ord_na_lei.mmt')
+    mod = myokit.load_model('gray_na_lei.mmt')
     mod['INa']['g_Na_scale'].set_rhs(gna)
     mod['voltageclamp']['rseries'].set_rhs(rs)
     mod['voltageclamp']['rseries_est'].set_rhs(rs)
@@ -121,7 +121,7 @@ def generate_dat(num_mods=5):
 
 
 def main():
-    generate_dat(25)
+    generate_dat(50)
 
 
 if __name__ == '__main__':
