@@ -1,5 +1,5 @@
 numpy==1.23.5
 pints==0.4.0
-myokit==1.33.1
+myokit==1.37.3
 pandas==1.4.0
 seaborn==0.13.2
