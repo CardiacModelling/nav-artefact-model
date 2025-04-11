@@ -11,8 +11,8 @@ To run the code, run `pip install -r requirements.txt` to install all the necess
 - Figure 5C: Run `python figure-plot.py -m iyer -p NaIV_35C_80CP -d cell6 -l 90`.
 - Figure 6A: Change directory to `src` and run `python averaging-issue.py`.
 - Figure 6B: Change directory to `src` and run Jupyter notebook `mutant-issue.ipynb`.
-- Figure 7: Run `python figure-plot-diff-models.py -m gray -p NaIV_35C_80CP -d cell9 -l 90`.
-- Figure 8: Change directory to `src/ap` and run Jupyter notebook `ap-effects.ipynb`.
+- Figure 7: Change directory to `src/ap` and run Jupyter notebook `ap-effects.ipynb`.
+- Figure 8: Run `python figure-plot-diff-models.py -m gray -p NaIV_35C_80CP -d cell9 -l 90`.
 
 ### Content
 
